@@ -1,0 +1,160 @@
+---
+title: "Lecture #13"
+subtitle: "난수를 사용한 평균의 분포에 대한 모의실험"
+author: "Junho Ahn"
+date: "`r format(Sys.Date(), '%Y-%m-%d')`"
+output: 
+  html_document:
+    theme: paper
+    highlight: textmate
+    df_print: paged
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    fig_caption: true
+---
+
+```{r setup, include=FALSE}
+graphics.off()
+rm(list = ls())
+gc()
+
+options(kableExtra.auto_format = FALSE)
+
+# knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE,
+knitr::opts_chunk$set(echo = TRUE, message = TRUE, warning = TRUE,
+                      fig.align = "center", fig.width = 7, fig.retina = 2,
+                      dpi = 96)
+
+#theme_set(theme_bw())
+
+```
+
+## 정규분포에서의 평균의 분포
+
+### 정규분포에서의 평균
+
+**가정**  
+$n$개의 자료 $X_1, X_2, ... , X_n$가 모두 독립이고 기댓값이 $\mu$이고 분산이 $\sigma^2$인 정규분포  
+
+**표본평균 $\bar X$의 분포**  
+- 기댓값은 $\mu$, 분산은 $\frac{\sigma^2}{n}$인 정규분포  
+- 기댓값은 변함이 없음  
+- 분산은 작아짐  
+
+<br>
+
+### 모의실험을 이용한 평균의 분포 확인
+
+#### 모의실험1  
+
+(평균에 대한 모의실험)  
+1. 10개의 표준정규분포에서의 난수의 평균을 계산하는 것을  
+2. 100번 반복하여 100개의 평균을 얻어  
+3. 이들 평균의 평균과 분산을 계산해보자. 이 값이 0과 1/10에 근접하는지 확인  
+
+```{r}
+meannorm <- function(n=10, nrep=100) {
+  mx <- rep(0, nrep) # mx를 nrep개의 표본평균으로 저장할 벡터로 사용하며 초기값으로 0을 설정
+  for(i in 1:nrep){ # for 반복문은 n개의 표준정규분포에서의 난수생성, 이의 평균을 mx에 저장
+    x <- rnorm(n)
+    mx[i] <- mean(x)
+  } # end for
+  list(mmx=mean(mx), sdmx=var(mx)) # list명령으로 평균과 표준편차의 값을 출력으로 얻음
+} # end function
+```
+
+함수 호출결과
+
+```{r}
+meannorm()
+```
+
+평균은 $\mu = 0$에 가까운 값, 표준편차는 $\frac{1}{\sqrt{n}} = \frac{1}{\sqrt{100}}$에 근접한 값을 확인할 수 있음  
+
+평균을 1000번 얻어 이들의 평균과 표준편차를 반복한 결과  
+
+```{r}
+meannorm(n=10, nrep=1000)
+```
+
+비슷한 결과를 얻을 수 있음  
+
+<br>
+
+#### 모의실험2  
+
+(정규분포에서 표본평균의 분포)  
+정규분포의 표본평뉵이 정규분포인지 확인하기 위해   
+1. 정규분포 난수를 사용하여 표본평균의 값을 모의실험으로 생성하고  
+2. 이들 표봉평균에 대한 히스토그램을 그려보자  
+
+```{r}
+meanhist <- function(n=10, nrep=100) {
+  mx <- rep(0, nrep) # mx를 nrep개의 표본평균으로 저장할 벡터로 사용하며 초기값으로 0을 설정
+  for(i in 1:nrep){ # for 반복문은 n개의 표준정규분포에서의 난수생성, 이의 평균을 mx에 저장
+    x <- rnorm(n)
+    mx[i] <- mean(x)
+  } # end for
+  hist(mx, prob = T) #nrep개의 평균을 얻은 다음 mx로 히스토그램을 그림
+  lines(xx <- seq(-3,3,by=0.02), dnorm(xx, 0, sqrt(1/n)), col = "red") # line함수는 정규분포의 곡선을 추가하는 명령
+} # end function
+```
+
+```{r}
+meanhist()
+```
+
+정규분포와 가까운 것을 확인할 수 있음  
+
+## 이항분포의 정규근사  
+
+### 이항분포와 정규분포의 근사  
+
+**자료 $X$**  
+$n$개 중에서 성공의개수인 $X$의 분포가 성공확률 $p$인 이항분포인 경우  
+
+$X$의 분포  
+- 기댓값 $np$, 분산 $np(1-p)$인 정규분포로 근사할 수 있음 ($n$이 충분히 클 때)  
+- 이를 **이항분포의 정규근사**라고 함  
+
+
+### 모의실험을 이용한 이항분포의 정규근사 확인  
+
+(이항분포의 정규근사) 이항분포의 겅규근사를 모의실험으로 확인해 보기로 한다.  
+
+```{r}
+norm.binorm <- function(ndata=1000, nn=100, p=0.5) {
+  #--------------------------------------------------------------
+  # B(nn,p)에서 ndata개의 난수를 생성하여 이를 N(np, npq)와 비교
+  # B(nn,p)의 확률 히스토그램과 정규분포의 pdf그림
+  #---------------------------------------------------------------
+  x <- rbinom(ndata, nn, p)
+  substr <- paste("n=", as.character(nn), ", p=", as.character(p), sep = "")
+  hist(x, prob=TRUE, main="B(n,p)와 N(np, nqp)의 비교", sub = substr)
+  
+  mx <- nn*p
+  sdx <- sqrt(nn*p*(1-p))
+  xmin <- min(x)
+  xmax <- max(x)
+  xx <- seq(from=xmin, to=xmax, length.out=100)
+  lines(xx, dnorm(xx, mx, sdx))
+} #end function
+```
+
+<br>
+
+__함수설명__  
+
+- x에 이항분포에서의 난수를 ndata 개수만큼 생성하여 저장함  
+- hist 함수로 이에 대한 히스토그램을 그림: 이 때 주제목과 보조제목(substr)을 설정함  
+- 히스토그램을 정규분포에 비교하기 위해 평균을 mx, 표준편차를 sdx라고 하였음  
+- 정규분포 곡선을 겹쳐 그리기 위해 자료 중 최소와 최대를 얻어 이 사이에 100개의 값을 얻어 xx라고 하였음.  
+- xx에서의 dnorm값을 얻어 정규분포 xx에서 정규분포의 확률밀도함수를 계산하였음  
+- 마지막으로 `lines()` 함수를 사용하여 정규분포 곡선을 히스토그램에 겹쳐 그렸음  
+
+```{r}
+par(family = "AppleGothic")
+norm.binorm()
+```
+

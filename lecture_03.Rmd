@@ -1,0 +1,247 @@
+---
+title: "Lecture #3"
+subtitle: "코딩변경(recode), 변숫값 레이블링"
+author: "Junho Ahn"
+date: "`r format(Sys.Date(), '%Y-%m-%d')`"
+output: 
+  html_document:
+    theme: paper
+    highlight: textmate
+    df_print: paged
+    toc: true
+    toc_depth: 2
+    toc_float: true
+    fig_caption: true
+---
+
+```{r setup, include=FALSE}
+graphics.off()
+rm(list = ls())
+gc()
+
+
+options(kableExtra.auto_format = FALSE)
+
+# knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE,
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE,
+                      fig.align = "center", fig.width = 7, fig.retina = 2,
+                      dpi = 96)
+
+#theme_set(theme_bw())
+
+```
+
+## 코딩변경(recoding) 정의
+원자료의 값을 다른 값으로 변경하는 것  
+
+### 개요  
+
+**체질량지수(Body Mass Index, BMI)**  
+사람의 키와 체중에 의해 키에 따른 적절한 체중을 제시하는 방법    
+
+$$ BMI = \frac{weight(kg)}{height(m)^2}$$
+
+**대한비만학회의 체질량지수에 따른 기준**    
+
+|BMI|18.5이하|18.5~23.0|23.0~25.0|25.0~30.0|30.0|
+|:---:|:---:|:---:|:---:|:---:|:---:|
+|판정|저체중|정상|과체중|초기비만|비만|
+
+
+1강에서 불러와 사용했던 파일을 다시 불러서 사용  
+
+```{r}
+BMI <- read.csv("./Lecture01_BMI.csv")
+
+head(BMI)
+```
+
+자료에는 나이와 체질량지수가 계산되어 있지 않으므로 이를 계산하여 데이터 프레임 BMI에 추가  
+
+```{r}
+BMI$age <- 2000 - BMI$year # 2000년 취득 데이터
+BMI$bmi <- BMI$weight/(BMI$height/100)^2 # height가 cm단위이므로 m단위로 변환
+head(BMI)
+```
+
+## Recoding 방법
+
+`dplyr::mutate_if()`함수를 사용하면 간단하게 변환이 가능하나, native R 함수나 `car::recode()`함수의 사용법을 익히기 위해 정리함.  
+
+
+### if + for문 사용  
+
+조건에 따라 새로운 값을 설정하는 매우 원시적인 방법  
+for반복문은 R에서 가급적 피해야 할 방법 중 하나임.  
+
+```{r}
+for(i in 1:dim(BMI)[1]){
+  if(BMI$bmi[i]<=18.5) BMI$cbmi[i] <- 1
+  if(BMI$bmi[i]>18.5 && BMI$bmi[i]<=23.0) BMI$cbmi[i] <- 2
+  if(BMI$bmi[i]>23.0 && BMI$bmi[i]<=25.0) BMI$cbmi[i] <- 3
+  if(BMI$bmi[i]>25.0 && BMI$bmi[i]<=30.0) BMI$cbmi[i] <- 4
+  if(BMI$bmi[i]>30.0) BMI$cbmi[i] <- 5
+}
+
+table(BMI$cbmi)
+```
+
+### if문만 사용  
+
+if를 명시적으로 사용하지는 않았지만 내부적으는 if문이 사용된 것임.  
+
+```{r}
+BMI$cbmi2 <- BMI$bmi
+BMI$cbmi2[BMI$bmi<=18.5] <- 1
+BMI$cbmi2[BMI$bmi>18.5 & BMI$bmi<=23.0] <- 2
+BMI$cbmi2[BMI$bmi>23.0 & BMI$bmi<=25.0] <- 3
+BMI$cbmi2[BMI$bmi>25.0 & BMI$bmi<=30.0] <- 4
+BMI$cbmi2[BMI$bmi>30.0] <- 5
+
+table(BMI$cbmi2)
+
+```
+
+### car::recode() 함수 사용  
+
+__recode(x, "범위1=값1; 범위2=값2; 범위3=값3;...")__    
+
+- x: 코딩변경할 자료가 포함된 벡터  
+
+- " ": 큰 따옴표 안에 코딩 규칙을 설정
+  * 각각의 코딩변경 규칙은 세미콜론(;)으로 구분  
+  * 범위는 콜론(:)으로 구분하면 최솟값은 lo, 최댓값은 hi로 사용 (10이하는 lo:10, 10초과는 10:hi)  
+  * = 뒤에는 새로운 값을 설정  
+  
+```{r}
+library(car)
+BMI$cbmi3 <- recode(BMI$bmi, "lo:18.5=1; 18.5:23.0=2; 23.0:25.0=3; 25.0:30.0=4; 30.0:hi=5")
+table(BMI$cbmi3)
+
+```
+
+어느 방법으로 하든 동일한 결과가 나오는 것을 알 수 있음  
+
+## 변숫값 이름주기 (labeling)
+
+### 개요  
+
+**자료가 범주형(categorical)인 경우**   
+
+- 명목형(nominal)과 순서형(ordered)으로 구분 (명목형: 성별, 국적등, 순서형: 불만족, 보통, 만족 등)   
+- 범주의 각 값에 대해 (대개 코딩은 숫자로 되어있음) 이름을 설정하면 분석결과를 얻을 때 좀 더 나은 형태의 결과를 얻을 수 있으며 빠른 해석이 가능함.  
+- R에서는 범주형 자료에 대해서 명목형 또는 순서형으로 선언도 하고 각 값에 대해 이름(label)을 주는 함수를 제공함   
+
+#### 명목형인 경우: factor() 함수 사용
+
+__factor(x, levels, labels)__
+
+
+#### 순서형인 경우: order() 함수 사용
+
+__ordered(x, levels, labels)__  
+
+#### 매개변수  
+
+- x: 명목형 또는 순서형으로 선언할 벡터의 이름  
+
+- levels: x의 가능한 값  
+
+- lebels: x의 가능한 값에 대응하여 설정할 이름  
+
+
+### factor() 함수와 명목형 자료  
+
+변숫값에 대한 이름이 설정되지 않은 경우 (BMI 자료의 종교에 대한 도수 분포표)  
+
+```{r}
+table(BMI$religion)
+```
+
+```{r}
+BMI$religion <- factor(BMI$religion,
+                       levels = c("Bu", "C1", "C2", "No"),
+                       labels = c("불교","개신교","카톨릭","없음"))
+
+table(BMI$religion)
+```
+
+### ordered() 함수와 순서형 자료  
+
+```{r}
+BMI$cbmi <- ordered(BMI$cbmi,
+                     levels = seq(1,5),
+                     labels=c("저체중","정상","과체중","초기비만","비만"))
+table(BMI$cbmi)
+
+```
+
+**주의사항**
+
+1. 원자료가 숫자인 경우  
+
+  - factor() 또는 ordered() 함수로 변환된 경우에는 수치계산이 불가능함. (예. 평균, 분산등을 계산하는 mean, var함수 등의 호출)    
+
+  - 평균계산의 예 - ordered() 함수를 사용한 cbmi 값은 1부터 5사이가 원래의 값이지만 이 값에 대한 평균을 계산하면 아래와 같이 에러메시지가 출력  
+  
+```{r}
+mean(BMI$cbmi)
+
+```
+  
+2. 5점 척도의 만족도와 같은 경우  
+
+  - 때로 평균 등의 수치계산이 필요한 경우가 있으므로 이런 경우 수치형으로 변경 후 계산이 가능  
+
+```{r}
+mean(as.numeric(BMI$cbmi))
+```
+  
+## 벡터의 원소에 이름 주기  
+
+### 개요
+R객쳉의 값에 대한 이름을 불러오거나 객체의 값에 대한 일므을 설정할 수 있는 names()함수가 native R 함수로 제공됨  
+
+### 이름이 없는 경우  
+
+name을 주지 않은 상태에서 벡터 xx를 출력하는 경우  
+
+```{r}
+xx <- c(10, 20, 40, 30)
+xx
+```
+
+names() 함수로 xx에 이름을 설정하는 경우  
+
+```{r}
+names(xx) <- c("국어", "영어", "수학", "과학")
+xx
+```
+
+벡터의 일부만 출력하는 경우  
+
+```{r}
+xx[2:3]
+```
+
+
+### 이름이 설정된 경우   
+
+names() 함수의 매개변수에 개체를 설정함  
+
+```{r}
+names(xx)
+```
+
+일부 함수는 결과에 자동으로 이름을 붙여기도 함. 예를 들어 table()함수는 자료의 값으로 자동으로 이름을 설정함.  
+
+```{r}
+table(BMI$gender)
+```
+
+names()함수로 이름만 얻고자 할 때는  
+
+```{r}
+names(table(BMI$gender))
+```
+

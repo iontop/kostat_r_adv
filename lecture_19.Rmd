@@ -1,0 +1,231 @@
+---
+title: "Lecture #19"
+subtitle: "산점도와 상관계수"
+author: "Junho Ahn"
+date: "`r format(Sys.Date(), '%Y-%m-%d')`"
+output: 
+  html_document:
+    theme: paper
+    highlight: textmate
+    df_print: paged
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    fig_caption: true
+---
+
+```{r setup, include=FALSE}
+graphics.off()
+rm(list = ls())
+gc()
+
+options(kableExtra.auto_format = FALSE)
+
+# knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE,
+knitr::opts_chunk$set(echo = TRUE, message = TRUE, warning = TRUE,
+                      fig.align = "center", fig.width = 7, fig.retina = 2,
+                      dpi = 96)
+
+#theme_set(theme_bw())
+
+```
+
+## 공분산과 상관계수
+
+### 공분산과 상관계수의 사용
+
+* 키와 몸무게가 어느 정도 상관이 있는지, 소득과 저축의 관계는 어떠한지와 같이 두 속성의 연관을 수치로 나타내기 위한 방법으로 공분산이나 상관계수를 사용할 수 있음  
+
+* 공분산은 같은 자료라도 측정단위에 따라 달라지므로 주로 상관계수가 사용됨   
+
+### 계산 방법 및 성질  
+
+**공분산의 계산방법**  
+
+* 두 속성 $x$와 $y$에 대한 자료가 $(x_1, y_1),(x_2, y_2), ... , (x_n,y_n)$로 $n$개의 짝으로 얻어진 경우 두 자료의 공분산은 다음과 같이 정의함  
+
+$$S_{xy}=\frac{\displaystyle \sum _{i=1} ^n (x_i - \bar x)(y_i - \bar y)}{n-1}=\frac{\displaystyle \sum _{i=1} ^n x_i y_i - n \bar x \bar y}{n-1}$$
+
+* $x$가 증가(감소)할 때 $y$가 증가(감소)하면 공분산은 양의 값을 가짐  
+* $x$가 증가(감소)할 때 $y$가 감소(증가)하면 공분산은 음의 값을 가짐  
+  
+<br>
+  
+**상관계수의 계산방법**  
+
+* 상관계수라고 하면 보통 피어슨(pearson)의 선형상관계수를 말하며, 표본에서 얻은 상관계수는 보통 $\gamma$로 표시함  
+
+* 상관계수 $\gamma$는 다음과 같이 정의함  
+
+$$\gamma = \frac{Cov(x,y)}{S_x S_y} = \frac {\displaystyle \sum _{i=1} ^n (x_i - \bar x)(y_i - \bar y)}{\sqrt{\displaystyle \sum _{i=1} ^n (x_i - \bar x)^2}\sqrt{\displaystyle \sum _{i=1} ^n (y_i - \bar y)^2}} $$
+
+* 여기서 $S_x$와 $S_y$는 각각 $x$와 $y$의 표준편차
+  
+<br>
+  
+**상관계수 $\gamma$**  
+
+* $-1 < \gamma < 1$의 값을 가짐  
+* $x$가 증가(감소)할 때 $y$가 증가(감소)하면 상관계수는 양의 값을 가지며, $x$가 증가(감소)할 때 $y$가 감소(증가)하면 상관계수는 음의 값을 가짐  
+* 상관이 높을수록 상관계수의 절댓값이 1에 가까워지면 $(x_1, y_1),(x_2, y_2), ... , (x_n,y_n)$의 모든 점이 한 직선위에 존재하면 상관계수는 1또는 -1의 값을 가짐  
+* 두 변수 독립이면 표본에서 얻은 상관계수 $\gamma$는 0에 가까운 값을 가지며, 역은 성립하지 않음. 즉 상관계수가 0(또는 0에 가까운 값)이라고 하더라도 두 변수는 독립이 아닐 수 있음  
+
+<br>
+
+### R-언어의 함수  
+
+상관계수 및 공분산은 각각 `cor()`, `cov()`함수를 사용하여 얻을 수 있음
+
+<br>
+
+(단위에 따른 공분산과 상관계수) 공분산은 단위에 따라 달라지나 상관계수는 측정단위에 무관함을 확인하기 위하여 같은 자료 다른 단위인 5명의 학생의 키와 몸무게의 공분산과 상관계수 확인  
+
+```{r}
+htcm <- c(170, 179, 174, 167, 175)
+wtkg <- c(62, 67, 70, 60, 72)
+```
+
+```{r}
+htin <- htcm*0.394
+wtlb <- wtkg*2.2
+```
+
+같은 자료에서 다른 단위를 사용한 경우 공분산 계산 결과  
+
+```{r}
+cov(htcm, wtkg)
+```
+
+```{r}
+cov(htin, wtlb)
+```
+
+같은 방법으로 상관계수 계산  
+
+```{r}
+cor(htcm, wtkg)
+```
+
+```{r}
+cor(htin, wtlb)
+```
+
+공분산은 다르지만 상관계수의 값은 두 단뒤 모두에 대해서 같은 값을 얻음  
+
+<br>
+
+(결측치가 포함된 자료의 처리) 다음의 자료는 결측치를 포함한 자료이다.  
+
+```{r}
+x1 <- c(1, NA, 2, 3, NA, 4, 5, NA, 6, 7, NA, 8, 9, 10, 11)
+x2 <- c(NA, 1, 2, NA, 3, 4, NA, 6, 7, NA, 8, 9, 9, 11, 12)
+x3 <- c(1, 2, NA, 3, 4, NA, 5, 6, NA, 7, 8, NA, 9, 10, 11)
+x <- cbind(x1, x2, x3)
+t(x)
+```
+
+```{r}
+cor(x, use = "everything") # 하나라도 결측치가 있으면 NA 처리
+```
+
+```{r eval=FALSE}
+cor(x, use = "all.obs") # 하나라도 결측치이면 에러메시지
+
+# Error in cor(x, use = "all.obs") : missing observations in cov/cor
+```
+
+```{r}
+cor(x, use="pairwise.complete.obs") # 각(x1,x2), (x1,x3), (x2,x3) pair들끼리 계산
+```
+
+```{r}
+cor(x, use = "complete") # 모든 x1, x2, x3가 NA가 아닌 경우만 계산
+```
+
+```{r}
+cor(x, use = "na.or.complete") # 모든 x1, x2, x3가 NA가 아닌 경우만 계산
+```
+
+```{r eval = FALSE}
+cor(x[1:12,], use = "complete")
+
+# Error in cor(x[1:12, ], use = "complete") : no complete element pairs
+```
+
+```{r}
+cor(x[1:12,], use = "na.or.complete")
+```
+
+<br>
+
+(예시) BMI자료에서 키와 몸무게의 상관계수 및 공분산을 계산해보고 이 결과를 상관계수 공식으로 계산한 결과와 비교해보자.  
+
+```{r}
+BMI <- read.table("./bmi.txt", 
+                    col.names = c("height","weight","year","religion","gender","marriage"))
+```
+
+키와 몸무게의 공분산  
+
+```{r}
+cov(BMI$height, BMI$weight)
+```
+
+키와 몸무게의 상관계수
+
+```{r}
+cor(BMI$height, BMI$weight)
+```
+
+상관계수의 공식적용  
+
+```{r}
+cov(BMI$height,BMI$weight)/(sd(BMI$height)*sd(BMI$weight))
+```
+
+<br>
+
+(독립인 경우의 상관계수) 표준정규분포로부터 100개씩의 난수를 세 번 얻어 이를 100X3행렬에 저장하여 이의 상관계수를 얻어보자.  
+
+```{r}
+x <- cbind(rnorm(100),rnorm(100),rnorm(100))
+```
+
+```{r}
+cor(x)
+```
+
+<br>
+
+## 상관계수에 대한 이해  
+
+### 변수와 상관계수와의 관계  
+
+두 변수가 독립이면 상관계수가 0 (자료에서는 0에 가까운 값)이지만 상관계수가 0이라고 해서 두 변수가 독립이라고 할 수 없는 경우가 많음  
+이 경우는 두 변수의 관계가 직선이 아닌 관계에 있는 경우에 많이 발생함    
+
+### 상관게수는 0이지만 두 변수 사이에 관계가 있는 경우  
+
+(자료) 다음과 같이 x와 y를 정의하고 두 변수 사이의 상관계수를 계산해보고 산점도로 두 변수 사이의 관계를 확인해보자.  
+
+```{r}
+x <- seq(-1, 1, by = 0.05)
+y <- x^2
+cor(x,y)
+```
+
+```{r}
+plot(x,y)
+```
+
+- $x$는 -1에서 1사이의 값이고, $y=x^2$으로 포물선을 그리는 관계가 있음  
+- $x$와 $y$사이 상관계수는 0임  
+- 위 산점도에서 보는 것과 같이 $x$가 증가하면 $y$가 감소하다가 증가하는 패턴이 뚜렷하게 보임  
+
+<br>
+
+**피어슨(Pearson)선형 상관계수**  
+
+- 선형(linear)은 '직선'라는 의미로 이 상관계수는 직선관계는 수치로 잘 표현할 수 있지만 직선이 아닌 관계에 대해서는 잘 표현할 수 없음을 말함  
+- 상관에 대한 분석에서는 상관계수만 보면 잘못된 판단을 내릴 수 있으므로 반드시 산점도를 확인하여 직선 이외의 관계가 있는지 확인할 필요가 있음  
+

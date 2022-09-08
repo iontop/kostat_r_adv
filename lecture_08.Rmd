@@ -1,0 +1,209 @@
+---
+title: "Lecture #8"
+subtitle: "R - 언어의 색깔 설정"
+author: "Junho Ahn"
+date: "`r format(Sys.Date(), '%Y-%m-%d')`"
+output: 
+  html_document:
+    theme: paper
+    highlight: textmate
+    df_print: paged
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    fig_caption: true
+---
+
+```{r setup, include=FALSE}
+graphics.off()
+rm(list = ls())
+gc()
+
+options(kableExtra.auto_format = FALSE)
+
+# knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE,
+knitr::opts_chunk$set(echo = TRUE, message = TRUE, warning = TRUE,
+                      fig.align = "center", fig.width = 7, fig.retina = 2,
+                      dpi = 96)
+
+#theme_set(theme_bw())
+
+```
+
+## 그래픽 함수의 col 옵션
+
+### col에 색깔을 설정하는 방법  
+
+- col이라는 매개변수 사용  
+
+  - 0 ~ 8까지의 숫자로 기본색깔만 설정
+  - 색의 이름으로 설정
+  - rgb 함수로 빛의 삼원색인 빨강, 녹색, 파랑(Red, Green, Blue; RGB)로 설정
+  - hsv 함수로 색상, 채도, 명도(Hue, Saturation, Value(Brightness) ; HSV, HSB)로 설정
+  - 내장함수인 rainbow, topo.cocolors, heat.colors를 사용하는 방법
+  - 무채색인 경우 grey(또는 gray) 함수로 설정  
+
+### 숫자로 설정
+
+숫자로 색깔을 설정할 때 8보다 큰 수로 설정하면 1번 색깔(검정)부터 8번까지를 반복  
+
+```{r}
+barplot(rep(1,9), col=0:8)
+```
+
+색깔번호를 9이상 설정할 때 나오는 색깔  
+
+```{r}
+barplot(rep(1,20), col=0:20)
+```
+
+### 색의 이름으로 설정
+
+알려진 색의 경우 색이름을 사용  
+- red, green, blue, white, cyan, magenta, yellow, black, orange 등  
+- R에서 색 이름을 설정할 때는 반드시 따옴표를 사용해야 함  
+
+색을 사용할 개수와 설정한 색의 개수가 일치하지 않을 경우에는 색을 (반복)돌려가며 사용  
+(예. 색이 필요한 곳이 두 곳인데 설정한 색이 하나이면 모두 같은 색으로 칠해짐)  
+
+```{r}
+BMI <- read.csv("./Lecture01_BMI.csv")
+```
+
+
+```{r}
+par(mfrow=c(1,3))
+barplot(table(BMI[,4]), col="red")
+barplot(table(BMI[,4]), col=c("red", "blue"))
+barplot(table(BMI[,4]), col=c("red", "blue", "green"))
+```
+
+R에서 사용할 수 있는 색의 이름은 아래와 같이 확인할 수 있음.  
+
+```{r}
+# Generate a plot of color names which R knows about.
+#++++++++++++++++++++++++++++++++++++++++++++
+# cl : a vector of colors to plots
+# bg: background of the plot
+# rot: text rotation angle
+#usage=showCols(bg="gray33")
+showCols <- function(cl=colors(), bg = "grey",
+                     cex = 0.75, rot = 30) {
+    m <- ceiling(sqrt(n <-length(cl)))
+    length(cl) <- m*m; cm <- matrix(cl, m)
+    require("grid")
+    grid.newpage(); vp <- viewport(w = .92, h = .92)
+    grid.rect(gp=gpar(fill=bg))
+    grid.text(cm, x = col(cm)/m, y = rev(row(cm))/m, rot = rot,
+              vp=vp, gp=gpar(cex = cex, col = cm))
+  }
+```
+
+```{r}
+showCols(cl= colors(), bg="gray33", rot=30, cex=0.75)
+```
+
+## rgb 함수
+
+red, green, blue, alpha 순서로 0~1사이의 숫자로 빨강, 녹색, 파랑의 색의 농도를 설정하며, 0이 최소, 1이 최대임.  
+
+- rgb(0,0,0)은 세가지 색이 모두 없으므로 검정(black)  
+- rgb(1,1,1)은 세가지 색이 모두 최대로 설정되므로 흰색(white)  
+- rgb(1,0,0)은 빨강색만 최대이므로 빨강(red)  
+- alpha는 투명한 정도를 설정하며 1=불투명, 0=투명으로 생략가능함 (기본값 = 1)  
+
+### rgb 함수로 색을 설정하는 법
+
+```{r}
+par(mfrow=c(1,2))
+barplot(table(BMI[,5]), col=c(rgb(1,0,0), rgb(0,1,0)))
+barplot(table(BMI[,5]), col=c(rgb(1,0,0, 0.5), rgb(0,1,0, 0.5)))
+```
+
+### 투명도 alpha
+
+```{r}
+mycol <- c(rgb(1,0,0,1), rgb(1,0,0,0.67), rgb(1,0,0,0.33), rgb(1,0,0,0))
+x <- rep(10,4)
+bp <- barplot(x, col=rgb(1,1,1))
+y <- rep(4.77,4)
+txt <- rep("A",4)
+text(bp, y, txt, cex=2)
+
+barplot(x, col=mycol, add=TRUE)
+```
+
+* mycol: 빨강에서 투명도를 네 단계로 설정하고 높이 10인 막대그래프를 그림  
+* y: 높이 bp는 각 기둥의 중앙 x좌표로 설정하여 기둥의 중앙에 문자열 A를 그림  
+* `text()`함수: 기존 그래프에 문자열을 임의의 위치에 그려 넣은 함수  
+* `barplot()`함수: 같은 자료 x에 대한 막대그래프를 그리지만 색깔은 앞의 네 가지 서로 다른 투명도의 색으로 하고, add 옵션에 의해 기존 그래프에 추가됨.  
+
+## hsv 함수
+
+HSV 색상은 때로 HSB(=brightness)로 부르기도 하나 R에서는 hsv로 사용함  
+
+- hue, saturation, value, alpha 값을 순서대로 0~1 사이의 값으로 설정  
+- alpha 값은 투명한 정도를 설정 (기본값 = 1)
+
+### 색상, 채도, 명도의 값을 설정하는 방법
+
+채도와 밝기를 최대로 하고 색상을 1/20, 2/20, ..., 20/20으로 바꾸어 20개의 색상을 mycol에 정의하고 이를 막대그래프에 20개의 색으로 그린 것이다.  
+
+```{r}
+mycol <- NULL
+
+for(i in 0:20){
+  mycol <- c(mycol, hsv(i/20,1,1))
+}
+
+par(family = "AppleGothic")
+barplot(rep(10,21), col=mycol, names.arg = as.character(seq(0,20)/20),
+        yaxt="n", main="hue에 따른 색깔, s=1, v=1")
+```
+
+채도를 0.5로 낮춘 결과  
+
+```{r}
+mycol <- NULL
+
+for(i in 0:20){
+  mycol <- c(mycol, hsv(i/20,0.5,1))
+}
+
+par(family = "AppleGothic")
+barplot(rep(10,21), col=mycol, names.arg = as.character(seq(0,20)/20),
+        yaxt="n", main="hue에 따른 색깔, s=1, v=1")
+```
+
+명도를 0.5로 낮춘 결과  
+
+```{r}
+mycol <- NULL
+
+for(i in 0:20){
+  mycol <- c(mycol, hsv(i/20,1,0.5))
+}
+
+par(family = "AppleGothic")
+barplot(rep(10,21), col=mycol, names.arg = as.character(seq(0,20)/20),
+        yaxt="n", main="hue에 따른 색깔, s=1, v=1")
+```
+
+## rainbow, heat.colors, topo.colors 함수  
+
+### 색상, 채도, 명도의 값을 설정하는 방법  
+
+- `rainbow()`: 무지개 색  
+- `heat.colors()`: 열 표현
+- `topo.colors()`: 지도의 등고선 
+
+### rainbow, heat.colors, topo.colors 함수
+
+```{r}
+par(mfrow=c(3,1))
+barplot(rep(10,20), col=rainbow(20), names.arg = as.character(seq(1,20)), yaxt="n", main = "reainbow")
+barplot(rep(10,20), col=heat.colors(20), names.arg = as.character(seq(1,20)), yaxt="n", main = "heat.colors")
+barplot(rep(10,20), col=topo.colors(20), names.arg = as.character(seq(1,20)), yaxt="n", main = "topo.colors")
+
+```
+

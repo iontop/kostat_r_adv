@@ -1,0 +1,177 @@
+---
+title: "Lecture #17"
+subtitle: "함수 그리기 및 겹쳐 그리기"
+author: "Junho Ahn"
+date: "`r format(Sys.Date(), '%Y-%m-%d')`"
+output: 
+  html_document:
+    theme: paper
+    highlight: textmate
+    df_print: paged
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    fig_caption: true
+---
+
+```{r setup, include=FALSE}
+graphics.off()
+rm(list = ls())
+gc()
+
+options(kableExtra.auto_format = FALSE)
+
+# knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE,
+knitr::opts_chunk$set(echo = TRUE, message = TRUE, warning = TRUE,
+                      fig.align = "center", fig.width = 7, fig.retina = 2,
+                      dpi = 96)
+
+#theme_set(theme_bw())
+
+```
+
+## lines, points 및 text 함수
+
+### 기능과 사용함수  
+
+- `lines()`함수: 기존 함수에 선을 추가
+- `points()`함수: 기존 함수에 점을 추가  
+- `text()`함수: 기존 그래픽에 문자열을 추가
+
+
+### 선, 점, 문자열 추가하기  
+
+
+(히스토그램에 꺾은선 그래프 추가)  
+* hist함수는 그림 뿐만 아니라 그림을 그리기 위해 필요한 값을 출력  
+* hist함수의 출력 중 mid는 히스토그램의 기둥에서 가로축의 중간점 좌표를 저장하며  
+* count는 각 기둥의 빈도수를 저장함  
+* 히스토그램을 그린 후 mid와 count 값을 사용하여 꺾은선을 lines함수를 사용하여 추가  
+
+```{r}
+x <- rnorm(100)
+hist.res <- hist(x)
+lines(hist.res$mid, hist.res$count, col = rgb(0,0,1))
+```
+
+- x: 100개의 표준정규분포 난수를 생성
+- hist.res: hist 함수를 호출하여 중간 계산값을 저장하고, 이 때 hist함수에 의해 히스토그램이 만들어짐  
+- lines: hist.res에 저장한 mid 값과 해당 기둥의 빈도수를 연결하는 선을 lines함수로 그림  
+
+<br>
+
+(막대그래프에 선과 문자열 추가)  
+* 막대그래프는 barplot함수를 호출할 때 각 기둥의 중간점의 좌표가 계산됨  
+* 빈도수는 막대그래프를 그릴 때 사용함  
+* 따라서 위와 비슷한 방법으로 꺾은 선을 추가할 수 있음  
+
+```{r}
+freq <- c(10, 30, 20, 40)
+cat <- c("A", "B", "C", "D")
+bp.res <- barplot(freq, names.arg = cat, col = 2:5)
+lines(bp.res, freq, col = rgb(1,0,0), lwd = 2)
+text(bp.res, freq-2, as.character(freq), cex = seq(0.5,2,length=4))
+```
+
+- barplot함수로 막대그래프를 그린 후, 각 기둥의 좌표와 빈도를 연결하는 선을 lines함수를 사용하여 그림  
+- 마지막의 text함수로 각 기둥의 빈도값을 추가로 출력함  
+- 이 때 문자열은 빈도수로 문자의 크기는 0.5부터 2까지 바꾸었음  
+
+<br>
+
+(빈 산점도 만들고 사분면 표시하기) 좌표평면을 사분면으로 나누고 문자열로 표시  
+
+```{r}
+par(family = "AppleGothic")
+plot(c(-10,10), c(-10,10), type = "n")
+lines(c(-10,10), c(0,0))
+lines(c(0,0), c(-10,10))
+points(0,0,col = 2)
+text(c(5,-5,-5,5), c(5,5,-5,-5), labels = c("I", "II", "III", "IV"))
+text(0,0, pos=c(1,2,3,4), labels = c("아래", "왼쪽", "위쪽", "오른쪽"))
+```
+
+<br>
+
+(그룹별 표시 방법 변경) BMI자료에서 키와 몸무게를 성별에 따라 서로 다른 점으로 표시하기를 `points()`함수를 사용하여 구현해보자.  
+
+```{r}
+plot.test2 <- function(){
+  BMI <- read.table("./bmi.txt", 
+                    col.names = c("height","weight","year","religion","gender","marriage"))
+  plot(BMI$height, BMI$weight, type = "n")
+  points(BMI[BMI$gender == "F",]$height, BMI[BMI$gender == "F",]$weight, pch = 16, col = "red")
+  points(BMI[BMI$gender == "M",]$height, BMI[BMI$gender == "M",]$weight, pch = 15, col = "blue")
+}
+```
+
+```{r}
+plot.test2()
+```
+
+## abline 함수
+
+### 기능과 사용함수  
+
+abline함수: 직선 $y=a+bx$를 기존의 그래픽에 추가  
+
+### abline 함수로 직선 추가하기
+
+(예시) 키와 몸무게 자료 BMI를 사용하여 키와 몸무게에 대한 산점도를 그리고 이 그림에 키와 몸무게의 평균값을 지나는 가로축과 세로축을 그리는 경우를 구현해보자  
+
+- 먼저 plot(ht, wt)로 산점도를 그림  
+- abline(v=mean(ht))로 ht의 평균을 지나는 수직선을 그림  
+- abline(h=mean(wt))로 wt의 평균을 지나는 수평선을 그림  
+
+```{r}
+BMI <- read.table("./bmi.txt", 
+                    col.names = c("height","weight","year","religion","gender","marriage"))
+
+```
+
+```{r}
+abline.test <- function(){
+  ht <- BMI$height
+  wt <- BMI$weight
+  plot(ht, wt)
+  abline(v=mean(ht), lty = 2, col = "blue")
+  abline(h=mean(wt), lty = 2, col = "blue")
+}
+```
+
+```{r}
+abline.test()
+```
+
+<br>
+
+## legend함수
+
+### 기능과 사용함수
+
+legend함수는 matplot함수에 범례를 추가할 수 있음  
+
+### legend함수로 범례 추가하기
+
+```{r}
+df <- readxl::read_xlsx("./grdp.xlsx", skip = 1)
+
+head(df)
+```
+
+```{r}
+legend <- unlist(as.vector(df[3:8,1]))
+par(family = "AppleGothic")
+matplot(seq(2006, 2014), t(df[3:8, -1]), type = "l", xlab = "year", ylab = "GRDP")
+legend(x = "topleft", legend = legend, lty = 1:5, col = 1:6)
+legend(2012, 60000, legend = legend, lty = 1:5, col = 1:6)
+```
+
+<br>
+
+```{r}
+par(family = "AppleGothic")
+matplot(seq(2006, 2014), t(df[3:8, -1]), type = "l", xlab = "year", ylab = "GRDP")
+legend(x = "topleft", legend = legend, lty = 1:5, col = 1:6, cex = 0.7)
+```
+

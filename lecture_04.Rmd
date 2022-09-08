@@ -1,0 +1,307 @@
+---
+title: "Lecture #4"
+subtitle: "반복하는 작업에 대한 처리 - 함수의 작성"
+author: "Junho Ahn"
+date: "`r format(Sys.Date(), '%Y-%m-%d')`"
+output: 
+  html_document:
+    theme: paper
+    highlight: textmate
+    df_print: paged
+    toc: true
+    toc_depth: 2
+    toc_float: true
+    fig_caption: true
+---
+
+```{r setup, include=FALSE}
+graphics.off()
+rm(list = ls())
+gc()
+
+options(kableExtra.auto_format = FALSE)
+
+# knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE,
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE,
+                      fig.align = "center", fig.width = 7, fig.retina = 2,
+                      dpi = 96)
+
+#theme_set(theme_bw())
+
+```
+
+## 함수와 R언어의 함수 작성 문법
+
+### 함수의 생성  
+
+입력(생략가능)을 받아서 적절한 작업을 한 후에 출력을 생성함(생략가능)
+
+### 함수 작성 문법
+
+__function_name <- function(x) {함수의 내용}__  
+
+- function_name: 사용자가 설정하는 함수의 이름으로 벡터등의 이름과 마찬가지로 숫자로 시작하거나 특수문자등은 사용 불가  
+
+- x: 함수에서 사용할 변수로 필요한 경우에 전달 받으며, 전달받을 값이 없으면 생략 가능, 두 개 이상이면 콤마(,)로 구분 $\rightarrow$ 매개변수  
+
+### 매개변수가 없는 함수  
+
+1 ~ 10까지 합을 계산하고 이를 인쇄하는 함수
+
+```{r}
+myfcn <- function(){
+  x <- seq(1,10)
+  print(sum(x))
+}
+```
+
+위에서 만든 함수를 호출하면 아래와 같이 출력됨.  
+
+```{r}
+myfcn()
+```
+
+함수로 전달할 값이 없더라도 반드시 괄호()를 주어야 하며 이를 생략하면 함수의 정의가 출력됨.  
+
+```{r}
+myfcn
+```
+
+### 매개변수에 따른 함수 사용  
+
+매개변수 nn을 사용하여 1부터 nn까지의 자연수의 합을 계산하고 이를 인쇄하는 함수   
+
+```{r}
+myfcn2 <- function(nn){
+  x <- seq(1,nn)
+  print(sum(x))
+}
+```
+
+```{r}
+myfcn2(10)
+```
+
+```{r}
+myfcn2(100)
+```
+
+두 개 이상의 매개변수를 사용하는 함수  
+
+```{r}
+myfcn3 <- function(start, end) {
+  x <- seq(start, end)
+  print(sum(x))
+}
+```
+
+```{r}
+myfcn3(11,100)
+```
+
+입력하는 매개변수를 명확하게 하기 위해 등호를 사용하여 매개변수의 이름과 값을 함께 설정하는 것도 가능  
+
+```{r}
+myfcn3(start=11, end=100)
+```
+
+만일 전달할 변수가 함수의 매개변수 순서와 다를 경우 이름을 정확하게 설정해야 함.  
+
+```{r}
+myfcn3(end=100, start=11)
+```
+
+### 계산보기
+
+많은 경우 자료에 대한 기술통계를 작성할 때 평균과 표준편차를 함께 계산  
+따라서 벡터x에 대한 mean과 sd를 한번에 구하는 함수를 작성  
+
+```{r}
+BMI <- read.csv("./Lecture01_BMI.csv")
+
+head(BMI)
+```
+
+한 번에 평균과 표준편차를 계산하는 함수 작성  
+
+```{r}
+meansd <- function(x) {
+  mm <- mean(x)
+  stdev <- sd(x)
+  result <- c(mm, stdev)
+  names(result) <- c('평균','표준편차')
+  print(result)
+}
+```
+
+이 함수는 수치자료 x를 매개변수로 받고, mm에 평균을 stdev에 표준편차를 저장하여 이를 result라고 하고 가독성을 위해 이 두값에 이름을 설정한 후 결과를 출력  
+
+```{r}
+meansd(BMI$height)
+
+```
+
+CV(변동계수)의 계산은 내장함수가 없으므로 패키지를 사용하거나 매번 평균, 표준편차 계산을 해야 하므로 이를 함수로 작성해 두면 패키지를 부를 필요 없이 매번 긴 명령을 사용할 필요가 없음.  
+
+```{r}
+CV <- function(x) {
+  cv <- sd(x)/mean(x)*100
+  return(cv)
+}
+```
+
+```{r}
+CV(seq(1,100))
+```
+
+매개변수가 정해지지 않은 경우 함수를 작성할 때 ...(빈 칸없이 점 세개)를 사용하여 설정가능    
+
+```{r}
+x <- 1:100 # NA가 없는 자료
+xna <- c(x, NA) # NA가 있는 자료
+```
+
+
+함수를 아래와 같이 작성하고 매개변수에 ...이 있는 상태에서 몇 가지 방법으로 호출    
+
+```{r}
+my.mean1 <- function(x, ...){
+  mx <- mean(x,...)
+  return(mx)
+}
+```
+
+매개변수 하나만으로 호출한 결과  
+
+```{r}
+my.mean1(x)
+```
+
+NA가 있는 매개변수로 호출한 결과  
+
+```{r}
+my.mean1(xna)
+```
+
+계산이 되지 않고 NA가 반환됨  
+계산이 되도록 하기 위해 정해지지 않은 매개변수 ...에 추가 옵션을 설정한 결과  
+
+```{r}
+my.mean1(xna, na.rm=TRUE)
+
+```
+
+NA를 제외하고 계산이 되어지는 것을 확인  
+
+```{r}
+my.mean2 <- function(...,narm=TRUE){
+  mx <- mean(...,na.rm=narm)
+  return(mx)
+}
+```
+
+함수 my.mean2를 설정한 결과  
+
+```{r}
+my.mean2(x)
+```
+
+```{r}
+my.mean2(xna)
+```
+
+my.mean2()함수는 자료 x만 설정하면 x가 ...에 배당되어 함수 내에서 na.rm=TRUE가 추가  
+
+## 함수의 매개변수 확인
+
+### args()함수  
+
+함수의 매개변수 값을 확인하기 위해서 `args()`함수를 사용  
+
+```{r}
+args(meansd)
+
+```
+
+native R함수인 `log()`함수의 매개변수를 확인하면 아래와 같이 밑이 $exp(1)=e$이므로 native R에서는 `log()`함수는 밑이 $e$인 자연log임을 알 수 있음  
+
+```{r}
+args(log)
+```
+
+
+### attributes()함수  
+
+사용자가 직접 작성한 함수의 소스 코드를 확인하기  
+
+```{r}
+attributes(meansd)
+```
+
+
+### is.function()함수  
+
+함수인지 아닌지 확인하기  
+
+```{r}
+is.function(meansd)
+```
+
+```{r}
+xx <- rep(0,10)
+is.function(xx)
+```
+
+
+## source 함수를 사용한 파일 불러오기  
+
+### source() 함수 사용
+
+- 함수로 작성한 R 소스 파일  
+
+  1. 대개 다른이름으로 컴퓨터 내 어딘가 저장된 경우가 많음
+  2. 편집기 등으로 열어 복사 > 붙여넣기를 하는 것도 한 방법이나 source 함수를 사용하는 것을 권장함
+  
+- source() 함수를 사용하는 경우  
+
+  1. 함수의 작성과 같이 긴 프로그램을 R 콘솔에서 작성하는 것은 단 한번의 오타로 처음부터 입력해야 하는 문제 발생  
+  2. 함수의 일부 수정의 경우도 처음부터 다시 입력해야 하는 문제 발생  
+  
+**R언어의 편집은 여러가지 기능이 제공되는 문서 편집기를 사용하고 필요한 만큼 작성 또는 수정한 후 한 줄의 명령으로 불러오는 것이 편리함**  
+
+
+### 함수의 사용법  
+
+> source(file, encoding, ...)  
+
+- file: 읽어들일 파일의 이름 또는 URL  
+- encoding: 읽을 파일의 인코딩의 종류로 한글이 포함된 경우 UTF-8이 권장됨  
+
+**source()함수로 읽어들이는 것은 꼭 함수일 필요는 없음**  
+
+<br>
+
+만일 앞에서 사용한 meansd()함수가 이전에 한 번도 사용되지 않았거나 사용했더라도 저장되지 않은 상태인 경우,  
+
+```{r}
+meansd
+```
+
+```{r}
+meansd(seq(1,100))
+```
+
+```{r}
+source("~/R/stats/meansd.R", encoding = 'UTF-8')
+```
+
+윈도우의 경우 경로구분표시인 ₩는 R에서 특수문자이므로 ₩₩로 표현  
+윈도우의 경우 대소문자를 구분하지 않으므로 파일이라 드라이브 이름에 대소문자를 구분하지 않아도 되지만 Unix계열에서는 대소문자를 구분함.  
+
+경로구분을 하지 않고 특정한 폴더에서 작업하려면 setwd 명령을 먼저 사용  
+
+```{r}
+setwd("~/R/stats")
+source("meansd.R")
+```
+

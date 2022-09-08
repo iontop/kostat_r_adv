@@ -1,0 +1,181 @@
+---
+title: "Lecture #15"
+subtitle: "산점도 작성"
+author: "Junho Ahn"
+date: "`r format(Sys.Date(), '%Y-%m-%d')`"
+output: 
+  html_document:
+    theme: paper
+    highlight: textmate
+    df_print: paged
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    fig_caption: true
+---
+
+```{r setup, include=FALSE}
+graphics.off()
+rm(list = ls())
+gc()
+
+options(kableExtra.auto_format = FALSE)
+
+# knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE,
+knitr::opts_chunk$set(echo = TRUE, message = TRUE, warning = TRUE,
+                      fig.align = "center", fig.width = 7, fig.retina = 2,
+                      dpi = 96)
+
+#theme_set(theme_bw())
+
+```
+
+## 산점도  
+
+### 산점도와 plot함수
+
+**산점도(scatterplot)**  
+
+- $(x_1, y_1),(x_2, y_2), \dots ,(x_n, y_n)$의 짝으로 얻어진 자료의 $(x_i, y_i)$에 대해 좌표평면에 x축 값이 $x_i$, y축 값이 $y_i$인 곳에 점으로 표시하는 그림  
+
+- $n$개의 짝이 있으면 산점도엔 $n$개이 점이 표시되며 이 점들에 의해 두 변수 x와 y사이의 관계를 직관적으로 확인 가능  
+
+<br>
+
+### 산점도 및 함수 그리기  
+
+(자료를 사용한 산점도 그리기 및 함수 그리기)  
+1. BMI 자료를 사용하여 키와 몸무게의 산점도  
+2. 함수 $y=f(x)=x^2$을 $-10 \leq x \leq 10$에서 그려보자.  
+
+```{r}
+BMI <- read.csv("./Lecture01_BMI.csv")
+```
+
+```{r}
+par(mfrow=c(2,2), family = "AppleGothic")
+plot(BMI$weight, BMI$height, main = "키와 몸무게")
+plot(x <- seq(-10, 10, by = 0.2), y <- x^2, xlab = "x", ylab = "", main = "y=x^2")
+plot(x <- seq(-10, 10, by = 0.2), y <- x^2, xlab = "x", ylab = "", main = "y=x^2", type = "l")
+plot(x <- seq(-10, 10, by = 0.2), y <- x^2, xlab = "x", ylab = "", main = "y=x^2", type = "o")
+```
+
+<br>
+
+## 행렬산점도
+
+### 행렬산점도와 pairs함수  
+
+- 두 개 이상의 변수에 대해 모든 가능한 산점도를 그리는 것  
+- 만일 변수가 $x_1, x_2, x_3$가 있다면 $x_1$과 $x_2$, $x_2$와 $x_3$의 산점도 및 이들의 역순 $x_2$와 $x_1$(이 산점도는 $x_1$과 $x_2$의 산점도에서 $x-y$축을 바꾼 것으로 결과로 얻는 산점도는 원래 산점도를 직선 $y=x$에 대해 대칭이동한 것이 됨), $x_3$과 $x_1$등의 산점도를 모두 그리는 것  
+- 이 함수는 그림 영역 전체를 내부적으로 두 부분으로 나누어 사용하므로 mfrow나 mfcol등은 적용되지 않음  
+
+<br>
+
+### 행렬산점도 그리기  
+
+(자료) 키, 몸무게 자료에 BMI에서 키, 몸무게, 출생연도에 대한 모든 가능한 산점도를 그려보자.  
+
+```{r}
+pairs(~height+weight+year, data = BMI)
+```
+
+- 모든 옵션이 기본값으로 설정된 결과  
+- 변수 이름이 순서대로 height, weight, year로 나타나며 변수 이름은 왼쪽 위부터 오른쪽 아래로 내려감  
+
+```{r}
+pairs(~height+weight+year, data=BMI, upper.panel=NULL)
+```
+
+- upper.panel = NULL 옵션에 의해 대각선 위의 그림은 없음
+
+```{r}
+pairs.test <- function() {
+  pairs(~height+weight+year, data=BMI, subset = gender == "F",
+        labels = c("height(cm)", "weight(kg)", "year"), row1attop = FALSE)
+} #end function
+```
+
+```{r}
+pairs.test()
+```
+
+- 자료는 subset 속성의 설정에 의해 성별이 여자(F)인 경우만 산점도를 얻었음  
+- 반대각선에 있는 이름은 labels에서 설정한 이름들임  
+- row1attop = FALSE 옵션에 의해 대각선의 방향도 바뀜  
+
+<br>
+
+(대각선에 함수를 사용하여 결과 인쇄) 앞의 결과를 보면 대각선엔 문자열이 들어가지만 함수의 결과(출력)를 대각선에 이력하는 다음의 방법을 생각해보자. (diag.panel에 사용자 작성함수 지정)  
+
+```{r}
+my.panel.text <- function(x, ...) {
+  mx <- as.character(round(mean(x),1))
+  mystr <- paste("평균 \n", mx, sep="")
+  h <- hist(x, plot = FALSE)
+  xloc <- mean(h$breaks)
+  yloc <- xloc
+  text(xloc, yloc, mystr, cex=2, col=2)
+}
+```
+
+```{r}
+par(family = "AppleGothic")
+pairs(~height+weight+year, data=BMI, diag.panel=my.panel.text)
+```
+
+**함수설명**  
+
+- `my.panel.text()`함수는 매개변수 x를 받아서  
+- x의 평균을 소수점 1자리까지만 문자열로 변환하고  
+- "평균"이라는 문자열을 추가하여 mystr이라 함  
+- hist함수를 호출하되, 그림은 그리지 않고 출력만 받아 h라 하고  
+- 히스토그램의 각 기둥의 x 좌표들의 평균을 xloc, yloc라 함  
+- 좌표(xloc, yloc)에 문자열을 그림
+- `pairs()`함수에서 diag.panel에 `my.panel.text()`함수를 설정하여  
+- 이 함수의 결과인 평균을 빨간색으로 대각선에 출력함  
+
+<br>
+
+## 두 개이상의 산점도 겹치기  
+
+### matplot함수  
+
+__matplot()__는 주어진 하나의 x벡터값에 대해서 두 개 이상의 y벡터에 대한 산점도를 그리는 함수  
+
+
+### 중복한 산점도 또는 함수 그리기  
+
+(두 함수를 겹쳐 그리기)   
+* $x$가 $-\pi$부터 $\pi$사이의 100개의 값일 때 $sin(x)$와 $cos(x)$를 한 그림에 겹쳐 그린 보기임  
+* $y$는 $x$의 100개의 값을 $sin(x)$와 $cos(x)$의 값을 각각 첫번째 및 두번째 열로 갖는 행렬  
+
+```{r}
+matplot.test <- function(){
+  par(mfrow=c(1,2), family = "AppleGothic")
+  x <- seq(-pi, pi, length = 100) # -pi ~ pi 사이의 100개 값을 벡터로
+  y <- cbind(sin(x), cos(x)) # x에서 sin 및 cos 함수의 값 계산
+  matplot(x, y, type = "l", main = "기본설정") # x에서 sin과 cos 함수 그리기
+  matplot(y, type = "p", pch = 16, main = "한 값만 입력") # y만 입력된 경우 x는 (1,100)
+} # end function
+```
+
+```{r}
+matplot.test()
+```
+
+- 한 값만 입력할 경우 $x$의 입력을 생략하였으므로 $x$가 1부터 100사이인 것으로 간주함  
+
+<br>
+
+```{r}
+df <- readxl::read_xlsx("./grdp.xlsx", skip = 1)
+
+head(df)
+```
+
+```{r}
+matplot(seq(2006, 2014), t(df[3:8, -1]), type = "l", xlab = "year", ylab = "GRDP")
+```
+
+

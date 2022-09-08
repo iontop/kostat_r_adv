@@ -1,0 +1,237 @@
+---
+title: "Lecture #9"
+subtitle: "R - 그래픽 상자그림, 줄기잎그림"
+author: "Junho Ahn"
+date: "`r format(Sys.Date(), '%Y-%m-%d')`"
+output: 
+  html_document:
+    theme: paper
+    highlight: textmate
+    df_print: paged
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    fig_caption: true
+---
+
+```{r setup, include=FALSE}
+graphics.off()
+rm(list = ls())
+gc()
+
+options(kableExtra.auto_format = FALSE)
+
+# knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE,
+knitr::opts_chunk$set(echo = TRUE, message = TRUE, warning = TRUE,
+                      fig.align = "center", fig.width = 7, fig.retina = 2,
+                      dpi = 96)
+
+#theme_set(theme_bw())
+
+```
+
+## 상자그림(box plot)
+
+### 상자그림 작성법
+
+사분위에 해당하는 부분은 상자로 표현하고 그 밖의 범위를 선으로 연결하는 그림
+
+### boxplot 함수
+
+`boxplot()` 내장함수  
+
+- x: 상자그림을 그릴 자료를 포함한 벡터, 행렬, 데이터 프레임으로 자료가 두 개 이상의 열을 가질 경우 각 열의 상자그림을 side-by-side로 그리는 것이 기본  
+- formula: y ~ x 형태로 설정하며 x의 각 값에 따른 y의 상자 그림을 그림  
+- data: formula에서 사용한 변수를 포함하는 데이터 프레임을 설정
+- subset: 설정한 데이터 프레임에서 일부만 가져올 때 해당 조건을 설정  
+- range: 수염(whisker)의 길이를 최대 몇 배의 IQR까지 할 것인지 설정  
+- horizontal: 상자를 가로로 그릴지 설정 (Default = FALSE)
+- border: 상자의 색깔
+- col: 상자 내부의 색깔
+- outline: 수염의 길이보다 더 멀리 있는 자료를 표시할지 설정
+
+```{r}
+BMI <- read.csv("./Lecture01_BMI.csv")
+```
+
+<br>
+
+**예시1**    
+
+키에 대한 상자그림을 세로(기본값) 및 가로로 그려본다.  
+이 때 상자내부의 색갈은 3번(Green) 설정함.  
+
+```{r}
+par(mfrow=c(1,2))
+boxplot(BMI$height, border = 2, col = 3)
+boxplot(BMI$height, border = 2, col = 3, horizontal = TRUE)
+```
+
+수염 위쪽(오른쪽)의 점은 지나치게 큰 값을 표현한 것으로 제3사분위수 + 1.5IQR보다 큰 값들이 점으로 표시됨.  
+
+<br>
+
+**예시2**     
+
+(비교 상자그림) 상자 그림으로 자료의 분포나 5개의 분위수 값 등을 알 수 있어서 하나만으로도 충분히 의미가 있지만 그룹별 상자 그림을 좌우로 그려 그룹별 분포를 비교하는데 많이 사용된다.  
+다음은 100개의 표준정규분포에서 난수 2세트를 비교한 것과 BMI 자료에서 성별에 따른 상자그림을 그려본 것이다.  
+
+```{r}
+par(mfrow=c(1,2))
+boxplot(rnorm(100), rnorm(100))
+boxplot(height~gender, data = BMI)
+```
+
+<br>
+
+**예시3**    
+
+(자료의 일부분만 그리기, 제목주기) 상자 그림을 포함하여 많은 R 옵션으로 자료의 일부분만 선택할 수 있는 subset을 설정할 수 있다. 다음은 BMI 자료에서 미혼자의 성별, 키에 대한 상자그림과 기혼자의 성별 상자 그림을 그려본다.  
+
+```{r}
+par(mfrow=c(1,2), family = "AppleGothic")
+boxplot(height ~ gender, data = BMI, subset = marriage == "N", main = "미혼")
+boxplot(height ~ gender, data = BMI, subset = marriage == "Y", main = "기혼")
+```
+
+<br> 
+
+**예시4**  
+
+(outliners에 대한 설정) `boxplot()`함수는 $Q_3 + 1.5IQR$보다 큰 값이거나 $Q_1 + 1.5IQR$보다 작은 값은 이상치(지나치게 크거나 작은 값)로 판단하고 수염(whisker)를 최대 또는 최솟값까지 연장하지 않고 점으로 표시함.  기본적으로 사용한 1.5배 대신 다른 값을 사용하거나(range옵션), 아예 이상치를 점으로 표시하지 않고 최대 또는 최솟값까지 수염을 연장하는 경우에 대해서 알아보자.  
+
+BMI dataset에서 여성(Female)의 키만 추출한다음 수동으로 180, 185를 추가한다.  
+
+```{r}
+x <- c(BMI$height[BMI$gender=='F'], 180, 185)
+x
+
+```
+
+```{r}
+par(mfrow=c(2,2))
+boxplot(x, horizontal = TRUE)
+boxplot(x, range = 3, horizontal = TRUE)
+boxplot(x, horizontal = TRUE, outline = FALSE)
+```
+
+
+## 줄기잎 그림(stem-and-leaf plot)
+
+자료를 줄기와 줄기에 달린 잎으로 표현하는 그림  
+
+### 줄기잎 그림 작성법  
+
+**장점**  
+- 자료의 분포를 바로 알 수 있음  
+- 모든 자료가 보여지므로 사실상 자료 전체를 보여줌  
+
+**단점**  
+- 자료의 수가 많을 때 구현하기 곤란함  
+
+
+### stem 함수
+
+**stem() 함수 매개변수**  
+- x: 줄기잎 그림을 그릴 자료  
+- scale: 줄기 잎 그림의 한 줄기의 크기를 조절함  
+- width: 한 줄기에 최대한 그릴 잎의 개수를 설정  
+
+**예시1**  
+
+BMI 자료의 키에 대한 줄기잎 그림  
+
+```{r}
+stem(BMI$height)
+```
+
+<br>
+
+**예시2**  
+
+(각 줄기의 크기 설정) scale의 값을 설정하여 각 줄기의 크기를 바꾼다.  
+아래는 scale을 0.5로 바꾸어(스케일을 축소하여 한 줄기에 더 많은 잎이 달림) BMI자료에서 키에 대한 줄기잎 그림을 그린 예이다.  
+
+```{r}
+stem(BMI$height, scale = .5)
+```
+
+<br>
+
+**예시3**  
+
+(R의 줄기잎 그림은 이상치를 적절하게 배제하지 못함) 상자그림과 달리 R의 stem함수는 이상치를 줄기잎 그림에서 배제하지 못하므로 때로 당혹스런 결과가 나온다. 다음은 BMI자료에서 키를 입력하다가 오타로 1000이 입력된 경우를 가정하여 줄기잎 그림을 그린 보기이다.   
+
+```{r}
+stem(c(BMI$height, 1000))
+```
+
+<br>
+
+**예시4**  
+
+(한줄기에 표현하지 못한 잎들) 위의 그림에서 줄기 1을 끝에 보면 +97이 있는데 이는 한 줄기에 너무 많은 잎이 있어서 한 줄에 다 그리지 못한 자료가 97개 더 있다는 뜻이다. 이를 줄을 바꾸어서라도 한 줄기에 모든 잎을 표현하게 강제하여 (width=200; 최대 200개까지의 잎을 그린다는 의미) 다시 그려보면 아래와 같다.  
+
+```{r}
+stem(c(BMI$height, 1000), width = 200)
+```
+
+<br>
+
+### aplpack 패키지 사용
+
+`aplpack()` package를 사용하면 일반 줄기잎 그림을 그리는 `stem.leaf()`함수와 비교 줄기잎 그림을 그리는 `stem.leaf.backback()`함수가 제공됨.  
+
+`stem.leaf()`함수와 `stem.leaf.backback()`함수가 제공  
+- data: 줄기잎 그림을 그릴 자료가 포함된 벡터  
+- x, y: 비교 줄기잎 그림을 그릴 두 개의 벡터  
+- trim.outliers: 1.5배 IQR을 넘는 값은 LO, HI에 따로 배치함 (기본값은 TRUE)  
+
+**예제**    
+
+(stem.leaf가 기본적으로 처리는 하는 이상치) 1.5배 IQR을 넘는 자료는 어떻게 표시되는지 앞에서와 마찬가지로 BMI자료의 키에 오타로 인한 1000이 있다고 가정하고 `stem.leaf()`함수로 줄기잎 그림을 그려보자.  
+
+기존강의애서는 `aplpack` 패키지를 사용하는 예시를 보여주었으나 현재 버전의 R 에서는 사용이 되지 않기 때문에 아래와 같이 구현함.
+
+<pre>
+
+> library(aplpack)
+tcltk DLL is linked to '/opt/X11/lib/libX11.6.dylib'
+Error: package or namespace load failed for ‘aplpack’:
+ .onLoad failed in loadNamespace() for 'tcltk', details:
+  call: fun(libname, pkgname)
+  error: X11 library is missing: install XQuartz from www.xquartz.org
+
+> install.packages("XQuartz")
+Warning in install.packages :
+  package ‘XQuartz’ is not available for this version of R
+
+A version of this package for your version of R might be available elsewhere,
+see the ideas at
+https://cran.r-project.org/doc/manuals/r-patched/R-admin.html#Installing-packages
+
+</pre>
+
+
+[참고](https://stackoverflow.com/questions/26532564/how-to-output-a-stem-and-leaf-plot-as-a-plot)
+
+```{r}
+plot.new()
+tmp <- capture.output(stem(c(BMI$height, 1000)))
+text( 0,1, paste(tmp, collapse='\n'), adj=c(0,1), family='mono' )
+```
+
+
+```{r eval=FALSE}
+library(aplpack)
+stem.leaf(c(BMI$height, 1000), trim.outliers=TRUE)
+```
+
+```{r eval=FALSE}
+stem.leaf.backback(BMI$height[BMI$gender=='F'], BMI$height[BMI$gender=='M'])
+```
+
+
+
+### stem.leaf.backback 함수를 사용한 비교 줄기잎 그림  
+

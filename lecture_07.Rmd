@@ -1,0 +1,328 @@
+---
+title: "Lecture #7"
+subtitle: "R 그래픽: 막대그래프"
+author: "Junho Ahn"
+date: "`r format(Sys.Date(), '%Y-%m-%d')`"
+output: 
+  html_document:
+    theme: paper
+    highlight: textmate
+    df_print: paged
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    fig_caption: true
+---
+
+```{r setup, include=FALSE}
+graphics.off()
+rm(list = ls())
+gc()
+
+options(kableExtra.auto_format = FALSE)
+
+# knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE,
+knitr::opts_chunk$set(echo = TRUE, message = TRUE, warning = TRUE,
+                      fig.align = "center", fig.width = 7, fig.retina = 2,
+                      dpi = 96)
+
+#theme_set(theme_bw())
+
+```
+
+## 막대그래프를 그려주는 함수  
+
+### 막대그래프 그리기
+
+#### 막대그래프의 사용  
+
+주로 범주형 자료를 그림으로 표현하기 위해 사용  
+
+- 막대의 높이가 해당 범주의 빈도수 또는 비율이 됨   
+- 각 막개는 일반적으로 분리되도록 그림  
+
+#### 사용함수: barplot
+
+매개변수  
+
+- height: 기둥의 높이(빈도) 벡터 설정  
+- horiz: 기둥을 가로로 그릴지 세로로 그릴지 설정, 기본값은 FALSE로 세로 기둥  
+- beside: 비교 막대그래프  
+- main, sub: 주제목과 보조제목 설정  
+- name.arg: 각 기둥 이름   
+- legend.text: 범례 이름  
+- col: 각 기둥에 사용할 색깔 설정, 색깔의 이름이나 숫자  
+- density, angle: 기둥내부를 빗금으로 처리할 때 빗금의 수 및 각도  
+
+#### 예제  
+
+빈도수, 각 범주의 이름을 각각 freq, category라고 하고 아래와 같이 두 개의 빈도표 그리기  
+
+```{r}
+par(mfcol=c(1,2)) # 화면분할을 위해 par()함수 사용, mfcol인자는 그래프를 열 우선 배치
+freq <- c(10, 30, 20, 40)
+barplot(freq, main="undefined names.arg")
+category <- c("A", "B", "C", "D")
+barplot(freq, main="DEFINED", names.arg=category)
+```
+
+만약 변숫값에 이름이 설정된 경우에는 names.arg를 따로 설정하지 않아도 가로축에 이름이 나타남  
+
+```{r}
+par(family="AppleGothic") # family 설정을 해 주지 않으면 한글 깨짐
+freq <- c(10, 30, 20, 40)
+names(freq) <- c("AA", "BB", "CC", "DD")
+barplot(freq, main="열 이름을 미리 설정하는 경우")
+```
+
+### 마이크로 데이터와 색깔  
+
+```{r}
+BMI <- read.csv("./Lecture01_BMI.csv")
+BMI <- BMI[,-1] #1열에 있는 X(index) 제외
+head(BMI)
+```
+
+```{r eval=FALSE}
+barplot(BMI$religion) #자료가 문자형이므로 오류 발생
+
+#Error in -0.01 * height : non-numeric argument to binary operator
+```
+
+```{r}
+barplot(table(BMI$religion))
+```
+
+table()함수를 사용하여 빈도수를 정리하면 막대그래프를 그릴 수 있음  
+names.arg를 설정하지 않아도 table()함수의 출력이 각 범주값을 해당 빈도의 이름으로 가지기 때문임.  
+가로형태의 그래프를 그리기 위해서는 아래와 같이 horiz=TRUE로 설정  
+
+```{r}
+barplot(table(BMI$religion), horiz=TRUE)
+```
+
+색깔설정이 필요하면 숫자로 0~8까지 번호를 입력하거나 색이름을 입력  
+
+**색번호 (모든 R graphic 동일)**  
+
+|0|1|2|3|4|5|6|7|8|
+|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+|white|black|red|green|blue|cyan|megenta|yellow|gray|
+
+<br>
+
+색이름으르 입력할 때는 따옴표(" ")를 사용  
+
+```{r}
+par(mfrow=c(1,2))
+barplot(table(BMI$religion), horiz=TRUE, col = 2)
+barplot(table(BMI$religion), horiz=TRUE, col = "orange")
+```
+
+각 bar에 다른 색깔을 줄 수도 있음  
+
+(yaxt 옵션은 y축 눈금표시를 설정하는 옵션인데 "n"은 눈금표시를 않겠다는 의미)  
+
+```{r}
+barplot(rep(10,9), col=0:8, names.arg = as.character(seq(0,8)), yaxt="n")
+```
+
+### 누적 막대그래프와 비교 막대그래프
+
+두 개 이상의 열을 가진 행렬/데이터 프레임/표가 빈도로 입력될 경우 각 열의 값에 대해서 누적하여 막대그래프를 그림  
+첫번째 열은 첫번째 기둥에, 두번째 열은 두번째 기둥 등 순서열을 구분함.  
+첫번째 행은 가장 아래, 두번째 행은 두번째 층   
+행렬에서 각 원소의 위치와 누적 막대그래프의 각 칸은 행의 순서만 역순인 위치에 있게 됨.  
+
+#### 예시1
+
+두 개의 열을 가진 행렬을 사용하여 누적 막대 그래프를 그림  
+
+```{r}
+freq <- cbind(c(10, 20, 30), c(10, 10, 20))
+barplot(freq, col=1:3)
+```
+
+#### 예제2
+
+키,몸무게 자료에서 성별에 따른 종교에 대한 교차표를 `table()`함수로 얻어 이를 막대그래프로 그림  
+
+```{r}
+barplot(table(BMI$religion, BMI$gender))
+table(BMI$religion, BMI$gender)
+```
+
+#### 예제3 - 비교막대그래프
+
+각 그룹 별로 기둥을 좌우로 배치하여 그룹간 비교를 직관적으로 할 수 있는 막대그래프로 빈도수를 포함한 행렬을 입력으로 받으며 beside 옵션이 설정되어야 함  
+
+```{r}
+par(mfrow=c(1,2))
+barplot(freq, col=1:3, beside = TRUE)
+barplot(table(BMI$religion, BMI$gender), beside = TRUE)
+```
+
+
+### 범례추가, 빗금 만들기(density, angle)
+
+#### 범례(legend) 추가
+
+누적 또는 비교 막대 그래프는 가로축엔 이름이 자동 또는 names.arg 옵션으로 넣을 수 있으나 각 그룹 내의 기둥에 대한 구분이 되어 있지 않아 해석하기 불편하므로 이를 해결하기 위해 범례(legend)를 추가할 수 있음  
+
+#### 빗금 만들기
+
+색깔이 상자의 내부를 채우는 경우, 천연색이 아닌 흑백이면 구분이 안 가는 경우도 있어 빗금으로 기둥을 채우는 angle 옵션을 설정할 수 있음  
+
+빗금의 각도는 angle, 빗금의 밀도는 density 옵션을 사용함. angle = 수평에서 반시계 방향 각도, density = 인치당 빗금수를 입력  
+
+```{r}
+par(family = "AppleGothic")
+barplot(table(BMI$religion, BMI$gender), legend.text = c("불교", "개신교", "카톨릭", "없음"),
+        col = 1:4, density = 15, angle = c(45, 90, 135, 180))
+```
+
+### barplot 함수의 출력
+
+barplot 객체를 변수에 할당하면 각 가둥의 중간에 해당하는 x좌표값을 얻을 수 있음  
+
+```{r}
+par(family = "AppleGothic")
+bpres <- barplot(table(BMI$religion, BMI$gender), legend.text = c("불교", "개신교", "카톨릭", "없음"),
+        col = 1:4, density = 15, angle = c(45, 90, 135, 180))
+bpres
+```
+
+## 그래픽 장치 설정과 그래픽 옵션 설정
+
+### 그래픽 장치 설정
+
+#### 사용 가능 함수 목록
+
+- win.graph(width, height, ...) : 그래픽 윈도우 열기  
+- png(filename = "Rplot%03d.png", ...) : png 파일로 바로 저장  
+- jpeg(filename = "Rplot%03d.jpg", ...) : jpg 파일로 바로 저장  
+- tiff(filename = "Rplot%03d.tif", ...) : tiff 파일로 바로 저장  
+- dev.off(which=dev.cur()) : 현재의 또는 지정된 그래픽 장치 닫기  
+- graphics.off() : 모든 그래픽 장치 닫기  
+
+#### 함수 사용 예제  
+
+```{r}
+jpeg()
+barplot(table(BMI$religion, BMI$gender), legend.text = c("불교", "개신교", "카톨릭", "없음"),
+        col = 1:4, density = 15, angle = c(45, 90, 135, 180))
+dev.off()
+```
+
+### 그래픽 옵션 설정  
+
+console 창에서 `par()`을 입력하면 현재의 그래픽 설정을 볼 수 있음  
+
+```{r}
+freq <- c(10, 30, 20, 40)
+category <- c("A", "B", "C", "D")
+par(bg="yellow", fg="red")
+barplot(freq, names.arg = category, col = "orange")
+```
+
+## 3차원 막대그래프  
+
+3차원 막대그래프는 `latticeExtra` package의 `cloud()`함수를 사용
+
+### cloud 함수 사용
+
+매개변수  
+
+- x: 행렬이 설정되며 각 원소는 기둥의 높이를 나타낸다. x에 formula: freq ~ x+y형식으로 빈도수, x축, y축에 해당되는 변수를 설정할 수도 있다.  
+- data: 데이터 프레임 이름  
+- panel.3d.cloud: 그릴 그림의 형식을 설정하며 3차원 막대그래프는 panel.3d.bars로 설정
+- xbase, ybase: 기둥의 바닥 면적 비율  
+- col.facet, col: 기둥의 면의 색깔 및 선의 색깔 설정  
+- scales: 그림의 스케일에 대한 속성 설정  
+
+
+### 3차원 막대그래프 그리기  
+
+```{r}
+df <- read.table(
+text='x freq y
+level1 5 high
+level1 21 med
+level1 4 low
+level2 8 high
+level2 19 med
+level2 3 low
+level3 5 high
+level3 12 low
+level3 50 med', header=TRUE)
+
+df$x <- as.factor(df$x)
+df$y <- as.factor(df$y)
+
+```
+
+입력된 자료 df를 사용하여 3차원 막대그래프를 그리기 위해, `library()`를 사용하여 패키지를 load하고 `cloud()`함수 호출하기  
+
+```{r}
+library(latticeExtra)
+
+cloud(freq ~ x+y, data = df, panel.3d.cloud=panel.3dbars, xbase=0.4, ybase=0.4, col.facet=3, col=2)
+```
+
+기본적인 설정만 사용하여 (x, y)에서의 빈도가 freq인 freq ~ x+y로 기본식을 설정함.  
+기둥의 바닥면에 대한 비울을 0.4로, 기둥면과 기둥모서리의 색은 각각 3번색(green), 2번색(red)로 설정함.  
+
+```{r}
+cloud(freq ~ x+y, data = df, panel.3d.cloud=panel.3dbars, 
+      xbase=0.4, ybase=0.4,
+      xlab="", ylab="",
+      scales=list(arrows=FALSE, just='right'),
+      col.facet=level.colors(df$freq, at= do.breaks(range(df$freq),20),
+                             col.regions = topo.colors,
+                             colors=TRUE),
+      colorkey = list(col=topo.colors, at=do.breaks(range(df$freq),20)))
+```
+
+기본 설정은 이전 그래프와 같지만 xlab, ylab에 모두 ""로 설정하여 축의 이름을 삭제  
+__scale에 arrow=FALSE, just='right'로 설정__ 하여 화살표 출력 대시 x, y의 값을 출력  
+이 문자열은 오른쪽 정렬을 하도로 하였음  
+
+<br>
+
+col.facet에는 freq의 값을 20개 구간으로 (따라서 21개의 값) 나눈 구간의 끝점에 따라 색을 다르게 설정  
+이 때 사용할 색 팔레트는 topo.colors임. 참고로 topo.colors는 __지도에서 사용하는 색__ 임.  
+
+<br>
+
+colorkey는 그림의 오른쪽에서 색에 따른 빈도수 설명을 만들며 이 설명은 topo.colors를 col.facet에 설정된 구간에 적용  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

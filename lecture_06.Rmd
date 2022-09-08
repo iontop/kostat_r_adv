@@ -1,0 +1,283 @@
+---
+title: "Lecture #6"
+subtitle: "함수의 입출력처리와 매개변수"
+author: "Junho Ahn"
+date: "`r format(Sys.Date(), '%Y-%m-%d')`"
+output: 
+  html_document:
+    theme: paper
+    highlight: textmate
+    df_print: paged
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    fig_caption: true
+---
+
+```{r setup, include=FALSE}
+graphics.off()
+rm(list = ls())
+gc()
+
+options(kableExtra.auto_format = FALSE)
+
+# knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE,
+knitr::opts_chunk$set(echo = TRUE, message = TRUE, warning = TRUE,
+                      fig.align = "center", fig.width = 7, fig.retina = 2,
+                      dpi = 96)
+
+#theme_set(theme_bw())
+
+```
+
+## 함수의 출력방법
+
+### print, cat, return 함수 사용  
+
+#### print함수 사용  
+
+단순하게 결과를 화면에 인쇄하려는 경우 사용  
+
+```{r}
+myfcn1 <- function(){
+  x <- seq(1,10)
+  print(sum(x))
+}
+
+```
+
+계산결과  
+
+```{r}
+myfcn1()
+```
+
+#### cat함수 사용  
+
+출력에 적절한 문자열 등을 함께 사용하려는 경우 사용
+
+```{r}
+myfcn2 <- function(){
+  x <- seq(1,10)
+  cat("sum of x: ", sum(x), "\n")
+}
+```
+
+계산결과
+
+```{r}
+myfcn2()
+```
+
+문자열을 추가로 설정할 수 있음 $\rightarrow$ 숫자 55가 무엇인지 설명이 추가됨.  
+
+#### return함수 사용
+
+함수값의 반환은 기본적으로 return()함수를 사용하며, 하나의 값만 return할 수 있음
+
+```{r}
+myfcn3 <- function(){
+  x <- seq(1,10)
+  return(sum(x))
+}
+```
+
+계산결과
+
+```{r}
+myfcn3()
+```
+
+#### 세 방법 비교
+
+함수의 결과값에 1000을 합하는 계산을 한 결과  
+
+1. print()
+
+```{r}
+myfcn1()+1000
+```
+
+2. cat()
+
+```{r}
+myfcn2()+1000
+```
+
+3. return()
+
+```{r}
+myfcn3()+1000
+```
+
+**비교결과**
+
+- print()와 return()함수는 한 개체의 매개변수로 사용 가능하므로 __둘 이상의 개체를 반환하기에 적절하지 않음__ $\rightarrow$ 둘 이상의 개체를 print()나 return()함수로 반환하려면 c 또는 list등의 함수를 사용하여 반환할 값을 하나로 묶어야함.  
+
+- print()와 return()함수를 사용하여 결과를 반환한 경우, 함수의 반환값을 다른 연산에 직접 사용 가능하지만 __cat()함수는 결과를 다른 연산에 사용하지 못함.__  
+
+- pirnt()함수는 반환값을 무조건 인쇄하고 반환값을 사용한 추가 연산을 함 $\rightarrow$ 중간 출력이 필요없는 경우 이 함수는 권장되지 않음  
+
+- cat함수는 함수의 계산 결과가 최종 결과이며, 반환값으로 추가 계산을 하지 않는 경우를 제외하면 함수값 반환의 방법으로 권장되지 않음.  
+
+#### list함수 사용
+
+- 함수의 출력을 사용하요 다른 함수들에 사용하려는 경우  
+
+- 각 객체에 대해서 출력의 이름 설정이 필요한 경우  
+
+- 여러 개의 값에 대한 반환이 가능하며 하나의 값만 받으려면 $를 사용하거나 [ ]를 사용하여 __해당 인덱스를 지정__ 하면 됨.  
+
+- list()함수의 장점 중 하나는 __각각의 출력에 사용자가 이름을 설정__할 수 있음.  
+
+<br>
+
+에제 - xx를 매개변수로 받아서 xx의 합, xx의 제곱합을 각각 sum1, sum2로 list()를 사용하여 반환  
+
+```{r}
+myfcn4 <- function(xx){
+  sum1 <- sum(xx)
+  sum2 <- sum(xx^2)
+  list(sum1=sum1, sum2=sum2)
+}
+```
+
+평균과 실험계획 또는 회귀분석에서 사용하는 SST($SST = \sum y_i^2 - ny^{-2} $)계산  
+위 계산식에서  
+1. sum1/n을 계산하고 이를 mx에 반환  
+2. $SST=sum2 - n \times mx^2$을 계산함  
+where,  
+n: 자료의 수    
+sum1, sum2: 함수에서 얻은 반환값  
+
+<br>
+
+```{r}
+y <- seq(1,10)
+```
+
+
+매개변수 x로 계산한 함수 myfcn4의 반환값 중에서 sum1, sum2 중 하나를 선택하여 출력하려면  
+
+```{r}
+myfcn4(y)$sum1
+```
+
+```{r}
+myfcn4(y)$sum2
+```
+
+```{r}
+mx <- myfcn4(y)$sum1/10
+SST <- myfcn4(y)$sum2-10*mx^2
+SST
+```
+
+myfcn4를 두 번 호출하여 계산을 하는 경우 계산도 두 번이 수행되므로 아래와 같이 함수 호출을 한 번만 하는 것이 권장됨  
+
+```{r}
+result <- myfcn4(y)
+mx <- result$sum1/10
+SST <- result$sum2-10*mx^2
+SST
+```
+
+list()함수로 계산결과를 반환한 경우 인덱스를 사용하여 개별값을 반환 받을 수도 있음  
+
+```{r}
+myfcn4(y)[1]
+```
+
+```{r}
+myfcn4(y)[2]
+```
+
+아래와 같이 사용하면 에러 메시지 발생  
+
+```{r eval=FALSE}
+mx <- myfcn4(y)[1]/10
+
+# Error in myfcn4(y)[1]/10 : non-numeric argument to binary operator
+```
+
+인덱스를 사용하여 값을 반환하는 경우 그 값을 사용한 추가 연산이 곤란함 $\rightarrow$ list()함수를 사용하여 여러 개의 값은 함수 계산의 결과로 반환 받을 때는 $의 사용이 권장됨.  
+
+## 함수를 이용한 새로운 연산자 만들기  
+
+### 함수를 이용한 새로운 연산자의 정의 및 계산  
+
+- 연산자의 시작과 끝은 반드시 %  
+
+- 정의할 때는 따옴표를 사용하여 연산자를 정의  
+
+- 이 연산자를 사용할 때는 따옴표없이 사용
+
+연산자 %abinb%를 정의하고 이 함수는 a*2+b를 계산함.  
+
+```{r}
+"%abinb%" <- function(a,b){return(a*2+b)}
+```
+
+```{r}
+1 %abinb% 1
+```
+
+## 재귀적 호출(recursive calls)
+
+### 재귀적 호출의 개념  
+
+재귀적 호출이란 어떤 함수가 자기 자신을 호출하는 것  
+
+n!의 값 계산식: $n! = n \times (n-1) \times \dots \times 1$  
+
+사용함수  
+
+```{r}
+nfactorial1 <- function(nn){
+  result <- 1
+  for(i in 1:nn){
+    result <- result*i
+  }
+  return(result)
+}
+```
+
+```{r}
+nfactorial1(5)
+```
+
+
+### 재귀적 호출의 사용  
+
+$n! = n \times (n-1)!$이므로 factorial을 계산하는 왼쪽, 오른쪽항 모두 같은 factorial 계산이 있음  
+
+```{r}
+nfactorial2 <- function(nn){
+  if(nn==1) result <- 1
+  else result <- nn*nfactorial2(nn-1)
+  return(result)
+}
+```
+
+```{r}
+nfactorial2(10)
+```
+
+```{r}
+nfactorial2(3)
+```
+
+```{r}
+nfactorial2(4)
+```
+
+```{r}
+nfactorial2(5)
+```
+
+참고로 native-R 함수로 factorial()이 있어 n!을 계산해줌  
+
+```{r}
+factorial(10)
+```
+

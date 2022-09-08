@@ -1,0 +1,149 @@
+---
+title: "Lecture #20"
+subtitle: "산점도의 최적 직선 찾기-회귀분석"
+author: "Junho Ahn"
+date: "`r format(Sys.Date(), '%Y-%m-%d')`"
+output: 
+  html_document:
+    theme: paper
+    highlight: textmate
+    df_print: paged
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    fig_caption: true
+---
+
+```{r setup, include=FALSE}
+graphics.off()
+rm(list = ls())
+gc()
+
+options(kableExtra.auto_format = FALSE)
+
+# knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE,
+knitr::opts_chunk$set(echo = TRUE, message = TRUE, warning = TRUE,
+                      fig.align = "center", fig.width = 7, fig.retina = 2,
+                      dpi = 96)
+
+#theme_set(theme_bw())
+
+```
+
+## lsfit 함수
+
+### lsfit 함수의 사용법
+
+**키와 몸무게 사이의 관계식 찾기**    
+
+- 이 관계식을 찾기 위해 100명의 키와 몸무게를 조사한 결과  
+- 첫 번째 사람의 키와 몸무게는 $(x_1, y_1)$, 두 번째 사람의 키와 몸무게는 $(x_2, y2)$, ... ,100번째 사람의 키와 몸무게는 $(x_100, y_100)$으로 자료가 짝으로 얻어짐  
+- $i$번째 사람의 자료는 $(x_i, y_i)$로 표시  
+- $n$명을 조사한다면 $n$번째 자료는 $(x_n, y_n)$으로 표현  
+
+<br>
+
+두 변수에 대한 자료 $(x_1, y_1), (x_2, y_2), ... ,(x_n, y_n)$가 있을 경우 이 자료들 사이의 관계를 직선의 방정식 $y=b_0 + b_1 x$로 표현하고자 $b_0, \; b_1$을 얻을 때 사용할 수 있는 함수로 `lsfit()`함수가 있음  
+
+<br>  
+
+### 두 변수 사이의 회귀식 사용  
+
+```{r}
+BMI <- read.table("./bmi.txt", 
+                    col.names = c("height","weight","year","religion","gender","marriage"))
+```
+
+```{r}
+lsfit(BMI$weight, BMI$height)
+```
+
+회귀식 적용 1 : 몸무게 50(kg)인 경우 키(cm)예측  
+
+```{r}
+135.6921380+50*0.4938178 
+```
+
+회귀식 적용 2: 몸무게 70(kg)인 경우 키(cm)예측   
+
+```{r}
+135.6921380+70*0.4938178 
+```
+
+회귀식 적용 3: 몸무게 60(kg)인 경우 키(cm)예측  
+
+```{r}
+135.6921380+60*0.4938178 
+```
+
+회귀식 적용 4: 여러 값에 대해서 한 번에 알고 싶은 경우  
+
+```{r}
+reg.coef <- lsfit(BMI$weight, BMI$height)$coef
+x <- seq(45, 80, by = 5)
+y <- reg.coef[1] + reg.coef[2] * x
+yhat <- data.frame(x,y)
+yhat
+```
+
+<br>
+
+## lm 함수
+
+### lm 함수의 사용법  
+
+회귀분석에 사용할 수 있는 또 다른 함수로 `lm()`함수가 있음  
+
+### 일반적인 선형모형에 대한 식 사용  
+
+(BMI자료에서 키와 몸무게의 관계) lm함수를 사용하여 lsfit과 같은 결과를 얻는다.  
+
+```{r}
+lm(height ~ weight, data = BMI)
+```
+
+<br>
+
+(산점도 회귀직선 그리기) 가상자료로 lm함수를 사용하여 산점도를 설명하는 직선의 식을 얻어보자.  
+
+```{r}
+x <- seq(1,10)
+y <- jitter(2*x+1)
+lm(y ~ x)
+```
+
+```{r}
+par(mfrow = c(2,2))
+plot(lm(y ~ x))
+```
+
+<br>
+
+## plot 함수와 abline 함수  
+
+### abline 함수  
+
+$y$절편이 $a$이고 기울기가 $b$인 직선을 기존 그래프에 추가하는 함수  
+
+### plot과 abline에 대한 적용  
+
+(자료) 산점도에 겹쳐 그린 회귀직선 그림은 다음 두 명력의 결과이다.  
+
+```{r}
+plot(x,y)
+abline(lm(y~x)$coef, lty=2, col=2)
+```
+
+<br>
+
+(자료) abline함수로 직선을 추가하자.  
+
+```{r}
+ht <- BMI$height
+wt <- BMI$weight
+plot(ht, wt)
+abline(v = mean(ht), lty = 2, col = "blue")
+abline(h = mean(wt), lty = 2, col = "blue")
+abline(lsfit(ht, wt), lw = 3, col = "red")
+abline(lsfit(ht, wt)$coef, lw = 1, col = "gray")
+```

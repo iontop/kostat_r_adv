@@ -1,0 +1,172 @@
+---
+title: "Lecture #16"
+subtitle: "점과 선의 종류"
+author: "Junho Ahn"
+date: "`r format(Sys.Date(), '%Y-%m-%d')`"
+output: 
+  html_document:
+    theme: paper
+    highlight: textmate
+    df_print: paged
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    fig_caption: true
+---
+
+```{r setup, include=FALSE}
+graphics.off()
+rm(list = ls())
+gc()
+
+options(kableExtra.auto_format = FALSE)
+
+# knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE,
+knitr::opts_chunk$set(echo = TRUE, message = TRUE, warning = TRUE,
+                      fig.align = "center", fig.width = 7, fig.retina = 2,
+                      dpi = 96)
+
+#theme_set(theme_bw())
+
+```
+
+## 점의 종류  
+
+### 산점도에서 점의 종류  
+
+`plot()`, `matplot()`, `pairs()` 함수등에서 pch(Point CHaracter) 옵션에 숫자 또는 문자로 설정 가능  
+
+
+### 문자로 설정  
+
+- 사용할 문자를 pch="O"와 같이 직접 해당 문자를 지정
+- 작은 점은 마침표 "."로 설정  
+
+```{r}
+par(mfrow=c(2,2))
+plot(x=seq(1,10), y=seq(1,10), pch = ".")
+plot(x=seq(1,10), y=seq(1,10), pch = "X")
+plot(x=seq(1,10), y=seq(1,10), pch = "S")
+plot(x=seq(1,10), y=seq(1,10), pch = "O")
+```
+
+<br>
+
+### 숫자로 설정  
+
+특수한 점은 1에서 25사이의 숫자로 지정할 수 있음  
+
+(pch에 숫자로 설정하고 그 결과 확인)  다음은 25개의 서로 다른 점을 y=x 직선 위에 점으로 그려본 것이다.  
+
+```{r}
+n <- 25
+par(mfrow = c(1,2))
+plot(x=seq(1,n), y=seq(1,n), pch=seq(1,n))
+plot(x=seq(1,n), y=seq(1,n), pch=seq(1,n), col = "red", bg = "yellow")
+```
+
+<br>
+
+(산점도에서 그룹에 따라 다른 점으로 표시하기)   
+* 키와 몸무게는 특성상 남자와 여자가 뚜렷하게 구분된다.  
+* 따라서 BMI 자료로 키와 몸무게의 산점도를 그리되 성별에 따라 모양 및 색깔을 다르게 사용해보자  
+
+```{r}
+BMI <- read.table("./bmi.txt",
+                  col.names = c("height", "weight", "year", "religion", "gender", "marriage"))
+
+head(BMI)
+```
+
+```{r}
+plot.test <- function() {
+  # BMI data 읽어오기
+  BMI <- read.table("./bmi.txt",
+                  col.names = c("height", "weight", "year", "religion", "gender", "marriage"))
+  
+  # mypch와 mycol은 성별에 따른 점의 모양 및 색을 저장할 변수로
+  # 길이는 BMI의 행의 갯수, 초깃값은 NULL
+  mypch <- rep(NULL, dim(BMI)[1])
+  mycol <- rep(NULL, dim(BMI)[1])
+  
+  # BMI의 gender가 female이면 mypch, mycol이 각각 "F" 및 "red",
+  # gender가 male이면 mypch, mycol이 각각 "M" 및 "blue"로 설정
+  mypch[BMI$gender == "F"] <- "F"
+  mycol[BMI$gender == "F"] <- "red"
+  mypch[BMI$gender == "M"] <- "M"
+  mycol[BMI$gender == "M"] <- "blue"
+  
+  # 산점도를 그림
+  plot(BMI$height, BMI$weight, type = "p", pch = mypch, col = mycol)
+}
+```
+
+```{r}
+plot.test()
+```
+
+<br>
+
+## 선의 종류  
+
+### lty 옵션
+
+- 산점도에서 선을 사용할 경우 사용할 선의 종류를 설정함  
+- 0에서 6까지의 숫자를 사용하거나 "blank", "solid", "dashed", "dotted", "dotdash", "longdash", "twodash" 중의 하나의 문자열을 사용함  
+- 숫자로 설정하는 경우 0=blank, 1=solid(기본값), 2=dashed, 3=dotted, 4=dotdash, 5=longdash, 6=twodash이며 문자열인 경우 이름이 의미하는 형태의 선을 그리게 됨  
+- blank 또는 0인 경우 선이 보이지 않음  
+
+### lty 옵션의 설정  
+
+(숫자에 따른 선의 형태) 한 평면에 함수 y=x, y=x+1, y=x+2, ... ,y=x+6 (y=x를 y축으로 1씩 이동한 함수)를 그려 선의 종류를 확인해보자.  
+
+```{r}
+line.types2 <- function() {
+  x <- seq(1,10)
+  y0 <- x
+  y1 <- x+1
+  y2 <- x+2
+  y3 <- x+3
+  y4 <- x+4
+  y5 <- x+5
+  y6 <- x+6
+  
+  matplot(x, cbind(y0, y1, y2, y3, y4, y5, y6), lty = 0:6, type = "l")
+}
+```
+
+```{r}
+line.types2()
+```
+
+<br>
+
+## 선의 굵기
+
+### lwd 옵션
+
+- wd에 설정할 수 있는 값
+  - 자연수이며 자연수로 설정된 값이 선의 굵기로 사용됨.
+  - 단위는 픽셀이며, 자연수가 아닌 경우 1로 간주됨 (1픽셀 굵기의 선)
+
+### lwd 옵션의 설정   
+
+```{r}
+df <- readxl::read_xlsx("./grdp.xlsx", skip = 1)
+
+head(df)
+```
+
+```{r}
+matplot(seq(2006, 2014), t(df[3:8, -1]), type = "l", xlab = "year", ylab = "GRDP", lwd = seq(1,6))
+```
+
+- `matplot()`함수는 두 개이상에 대한 함수를 그리므로 따로 설정하지 않아도 색은 1번(검정)부터, 선의 형태는 1번 부터 시작하여 자동으로 바꿈  
+
+<br>
+
+(선의 굵기를 음수로 설정한 경우) lwd = 1로 설정한 것과 같은 효과  
+
+```{r}
+matplot(seq(2006, 2014), t(df[3:8, -1]), type = "l", xlab = "year", ylab = "GRDP", lwd = seq(-6, -1))
+```

@@ -1,0 +1,220 @@
+---
+title: "Lecture #18"
+subtitle: "3차원 그림 - 조감도/등고선"
+author: "Junho Ahn"
+date: "`r format(Sys.Date(), '%Y-%m-%d')`"
+output: 
+  html_document:
+    theme: paper
+    highlight: textmate
+    df_print: paged
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    fig_caption: true
+---
+
+```{r setup, include=FALSE}
+graphics.off()
+rm(list = ls())
+gc()
+
+options(kableExtra.auto_format = FALSE)
+
+# knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE,
+knitr::opts_chunk$set(echo = TRUE, message = TRUE, warning = TRUE,
+                      fig.align = "center", fig.width = 7, fig.retina = 2,
+                      dpi = 96)
+
+#theme_set(theme_bw())
+
+```
+
+## persp 함수
+
+### 기능과 사용함수  
+
+`persp()`함수는 평면의 좌표 (x,y)에서 높이가 z인 삼차원 함수를 그림으로 표현하는 함수로 이른바 조감도(bird eye view)를 만들어줌  
+
+z를 제외하고는 모두 기본값이 있으므로 가장 단순한 형태는 persp(z)로 쓸 수 있음  
+
+### 조감도 형식의 3차원 그림 그리기
+
+(이변량 정규분포의 함수 그리기)   
+* 상관계수 $\gamma$을 매개변수로 받아서 (기본값 0), $x,y$의 범위가 모두 (-3,3) 사이에서의 이변량 정규분포함수를 계산하여 그 결과를 $z$로 얻어보자 ($x,y$의 기댓값과 분산은 각각 0,1)  
+
+$$f(x,y) = \frac{1}{2 \pi \sqrt{1-\gamma ^2}} \; exp\{- \frac{x^2 - 2 \gamma x y + y^2}{2(1-\gamma^2)} \} $$
+
+* 이 때 $x,y$의 가능한 조합에서 얻은 $f(x,y)$의 값을 $z$라고 하고 이 곡선을 그린다.  
+
+**함수설명**  
+- binormal.pdf 함수는 상관계수 $\gamma$값을 매개변수로 받아  
+
+  1. $x,y$를 각각 -3부터 3사이의 값을 30개씩 만듦  
+  2. $z$는 $x[i]$ 및 $y[j]$에서의 값을 $z[i,j]$가 되게 for 반복문 내에서 계산함  
+  3. 계산결과를 출력함
+
+- persp.test함수는 두개의 조감도를 그림  
+- persp.test함수에서 binormal.pdf함수를 호출함  
+
+
+```{r}
+binormal.pdf <- function(r=0) {
+  x <- seq(-3, 3, length = 30)
+  y <- x
+  z <- matrix(0, nrow = length(x), ncol = length(y))
+  
+  for(i in 1:length(x)){
+    for(j in 1:length(y)){
+      z[i,j] <- exp(-(x[i]^2-2*r*x[i]*y[j]+y[j]^2)/(2*(1-r^2)))
+    }
+  } # end for
+  
+  z <- z/(2*pi*sqrt(1-r^2))
+  
+  list(x=x, y=y, z=z)
+} # end function
+```
+
+```{r}
+persp.test <- function(){
+  par(mfrow = c(1,2), family = "AppleGothic")
+  persp(binormal.pdf(0.6)$z)
+  persp(binormal.pdf(0.9)$z)
+}
+```
+
+```{r}
+persp.test()
+```
+
+상관계수 0.6 및 0.9인 경우 이변량 정규분포의 확률밀도함수 - persp함수  
+
+for 반복문을 두 번 사용하는 대신에 outer함수를 사용하면 반복문을 피할 수 있음  
+
+```{r}
+binormal.pdf2 <- function(x,y,r){
+  z <- exp(-(x^2-2*r*x*y+y^2)/(2*(1-r^2)))
+  z <- z/(2*pi*sqrt(1-r^2))
+  return(z)
+}
+```
+
+```{r}
+binormal.pdf3 <- function(r){
+  x <- seq(-3, 3, length = 30)
+  y <- x
+  z <- outer(x, y, FUN = binormal.pdf2, r = r)
+  list(x = x, y = y, z = z)
+} # end function
+```
+
+```{r}
+dtmtx1 <- binormal.pdf3(0.6)
+dtmtx2 <- binormal.pdf3(0.9)
+
+par(mfrow = c(1,2))
+persp(dtmtx1$z)
+persp(dtmtx2$z)
+```
+
+<br>
+
+(카우보이 모자 그림)   
+* 함수 $z=f(x,y)=sin(\sqrt{x^2 + y^2})$를 카우보이 모자함수(cowboy hat function)이라고 부르기도 한다.    
+* 이 함수를 $-5 < x,y < 5$인 범위에서 그려보자.  
+
+**함수설명**  
+
+1. $x,y$는 각각 -5에서 5사이의 값을 0.25씩 증가하여 만들었고, 
+2. $z$는 행과 열의 수가 각각 $x$와 $y$의 길이인 행렬로, 이 행렬의 $(i,j)$번째 원소의 값은 $z[i,j]$는 $z=f(x,y)=sin \sqrt{x^2+y^2}$로 계산하여   
+3. 이를 list함수에 의해 출력으로 만들었음  
+
+```{r}
+cowboyhat <- function() {
+  x <- seq(-5, 5, by = 0.25)
+  y <- x
+  nx <- length(x)
+  ny <- length(y)
+  z <- matrix(rep(0, nx*ny), ncol = ny) # 0으로 초기화
+  
+  for(i in 1:length(x)){
+    for(j in 1:length(y)){
+      z[i,j] = sin(sqrt(x[i]^2+y[j]^2))
+    }# end for j
+  }# end for i
+  
+  list(x = x, y = y, z = z)
+}# end function
+```
+
+```{r}
+persp.test5 <- function(){
+  par(mfrow = c(1,2), family = "AppleGothic")
+  persp(cowboyhat()$z, phi = 45, col = c("yellow", "green"), box = FALSE, 
+        main = "phi = 45도", sub = "45도 눈높이에서 그림")
+  persp(cowboyhat()$z, phi = 135, col = c("yellow", "green"), box = FALSE, 
+        main = "phi = 135도", sub = "90도를 넘어가 뒤집어진 형태")
+}# end function
+```
+
+```{r}
+persp.test5()
+```
+
+<br>
+
+## contour함수  
+
+### 기능과 사용함수  
+
+$x[i], y[j]$에서의 함숫값 $z[i,j]$의 값으로 등고선 그림을 그리고자 할 때 contour함수를 사용할 수 있음  
+
+### 등고선 형식의 그림 그리기  
+
+(이변량 정규분포) 앞에서 본 이변량 정규분포 함수 binormal.pdf함수를 사용하여 등고선 그림을 그려보자.  
+
+```{r}
+contour.test <- function() {
+  x <- binormal.pdf(0.7)$x
+  y <- x
+  z <- binormal.pdf(0.7)$z
+  par(mfrow = c(1,3), family = "AppleGothic")
+  contour(x, y ,z, drawlabels = FALSE)
+  contour(x, y, z, nlevel = 5, main = "nlevel = 5", col = 2, labcex = 0.8)
+  contour(x, y, z, level = seq(0.05, 0.25, by = 0.04),
+          labels = as.character(seq(0.05, 0.25, by = 0.04)),
+          main = "level, labels used", col = 4)
+} # end function
+```
+
+```{r}
+contour.test()
+```
+
+<br>
+
+## filled.contour함수  
+
+### 기능과 사용함수  
+
+- filled.contour함수는 그림 영역을 두 개로 나누어 왼쪽은 색을 채운 등고선 그림을, 오른쪽엔 범례를 만드는 방법의 그림을 제공함  
+
+- 그림 영역 전체를 내부적으로 두 부분으로 나누어 사용하므로 mfrow나 mfcol등은 적용되지 않음  
+
+### 색으로 채운 등고선 그림 그리기  
+
+(예시) 색을 20개의 무지개색을 사용하고 $x$와 $y$의 범위는 각각 (-3,3)인 경우 상관계수 0.7인 입녀량 정규분포의 등고선 그림을 그려보자.  
+
+```{r}
+filled.contour.test <- function(){
+  x <- seq(-3, 3, length = 30)
+  y <- x
+  filled.contour(x, y, binormal.pdf(0.7)$z, col = rainbow(20))
+} #end function
+```
+
+```{r}
+filled.contour.test()
+```
+
